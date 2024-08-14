@@ -343,7 +343,7 @@
         "tuktukcinema": {
             "label": "Tuktukcinema",
             "active": "True",
-            "url": "https://ww.tuktukcima.com/"
+            "url": "https://www.tuktukcima.com/"
         },
         "tvfun": {
             "label": "tvfun",
@@ -368,7 +368,7 @@
         "mycima": {
             "label": "Wecima",
             "active": "True",
-            "url": "https://weciimaa.online/"
+            "url": "https://wecima.show/"
         },
         "yalladrama": {
             "label": "Yalladrama",
