@@ -3,6 +3,8 @@
 
 import re
 	
+import xbmcgui
+
 import base64
 from resources.lib.gui.hoster import cHosterGui
 from resources.lib.gui.gui import cGui
@@ -197,6 +199,7 @@ def showMovies(sSearch = ''):
             
             sTitle = aEntry[1].replace("مشاهدة","").replace("مترجم","").replace("فيلم","").replace("مشاهدة","").replace("مسلسل","").replace("انمي","").replace("مترجمة","").replace("مترجم","").replace("فيلم","").replace("والأخيرة","").replace("مدبلج للعربية","مدبلج").replace("والاخيرة","").replace("كاملة","").replace("حلقات كاملة","").replace("اونلاين","").replace("مباشرة","").replace("انتاج ","").replace("جودة عالية","").replace("كامل","").replace("HD","").replace("السلسلة الوثائقية","").replace("الفيلم الوثائقي","").replace("اون لاين","").replace("برنامج","")
             siteUrl = aEntry[0]
+           
             s1Thumb = aEntry[2].replace("(","").replace(")","")
             sThumb = re.sub(r'-\d*x\d*.','.', s1Thumb)
             sDesc = ''
@@ -240,7 +243,7 @@ def showSeries(sSearch = ''):
     sHtmlContent = str(soup.find("div",{"id":"postList"}))
     #VSlog(sHtmlContent)
 
-    sPattern = '<div class=\"postDiv\">.*\s*<a href=\"(.+?)\".*\s*.*\s*.*alt=\"(.+?)\".*data-src=\"(.+?)(\?resize|\")'
+    sPattern = '<div class="postDiv">.*?\s*<a href="(.+?)".*?\s*.*?\s*.*?alt="(.+?)".*?data-src="(.+?)(?:\?resize|")'
 	
     matches = re.findall(sPattern,sHtmlContent)
     aResult = [True,matches]
@@ -523,6 +526,7 @@ def showLink():
     oGui = cGui()
     oInputParameterHandler = cInputParameterHandler()
     sUrl = oInputParameterHandler.getValue('siteUrl')
+    
     sMovieTitle = oInputParameterHandler.getValue('sMovieTitle')
     sThumb = oInputParameterHandler.getValue('sThumb')
 
