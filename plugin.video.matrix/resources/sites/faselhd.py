@@ -533,7 +533,7 @@ def showLink():
     oParser = cParser()    
     oRequestHandler = cRequestHandler(sUrl)
     sHtmlContent = oRequestHandler.request()
-
+   
     sPattern = 'player_iframe.location.href = ["\']([^"\']+)["\']'
     aResult = oParser.parse(sHtmlContent, sPattern)	
     if aResult[0]:
@@ -551,6 +551,7 @@ def showLink():
             if aResult[0]:
                 for aEntry in aResult[1]:
                     sHosterUrl = aEntry[0]
+                    xbmcgui.Dialog().ok("",sUrl)
                     sHost = aEntry[1].upper()
                     sTitle = ('%s  (%s)') % (sMovieTitle, sHost)  
                     oHoster = cHosterGui().getHoster('faselhd') 
