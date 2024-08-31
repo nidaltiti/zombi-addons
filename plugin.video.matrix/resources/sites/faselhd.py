@@ -14,6 +14,7 @@ from resources.lib.handler.requestHandler import cRequestHandler
 from resources.lib.comaddon import VSlog, isMatrix, siteManager, addon
 from resources.lib.parser import cParser
 from bs4 import BeautifulSoup
+import requests
 from resources.lib import random_ua
 ADDON = addon()
 icons = ADDON.getSetting('defaultIcons')
@@ -530,24 +531,34 @@ def showLink():
     sMovieTitle = oInputParameterHandler.getValue('sMovieTitle')
     sThumb = oInputParameterHandler.getValue('sThumb')
 
-    oParser = cParser()    
-    oRequestHandler = cRequestHandler(sUrl)
-    sHtmlContent = oRequestHandler.request()
-   
-    sPattern = 'player_iframe.location.href = ["\']([^"\']+)["\']'
-    aResult = oParser.parse(sHtmlContent, sPattern)	
+    response = requests.get(sUrl)
+    sHtmlContent = response.text
+
+# Use BeautifulSoup to parse the HTML
+    soup = BeautifulSoup(sHtmlContent, 'html.parser')
+
+# Regex pattern to find the iframe URL
+    sPattern = r"player_iframe\.location\.href\s*=\s*['\"]([^'\"]+)['\"]"
+    aResult = re.findall(sPattern, sHtmlContent)
+ 
     if aResult[0]:
         for aEntry in aResult[1]:
             
+           
             oRequest = cRequestHandler(aEntry)
+         #   xbmcgui.Dialog().ok("URL to Fetch", aEntry[:200]) 
             oRequest.addHeaderEntry('user-agent',UA)
             oRequest.addHeaderEntry('referer',URL_MAIN)
-            data = oRequest.request()
+            data  = oRequest.request()
+           # xbmcgui.Dialog().ok("Fetched Data", data[:1000])
+        
             if 'adilbo' in data:
+                
                 data = decode_page(data)
-            
+                xbmcgui.Dialog().ok("",data)
             sPattern =  'data-url="([^<]+)">([^<]+)</button>' 
-            aResult = oParser.parse(data, sPattern)
+            aResult = re.findall(data, sPattern)
+        
             if aResult[0]:
                 for aEntry in aResult[1]:
                     sHosterUrl = aEntry[0]
@@ -561,9 +572,10 @@ def showLink():
                         cHosterGui().showHoster(oGui, oHoster, sHosterUrl, sThumb)            
 
             sPattern =  'videoSrc = ["\']([^"\']+)["\']' 
-            aResult = oParser.parse(data, sPattern)
+            aResult = re.findall(data, sPattern)
             if aResult[0]:
                 for aEntry in aResult[1]:
+                    xbmcgui.Dialog().ok("","x")
                     sHosterUrl = aEntry
                     sHost = 'Server 2'
                     sTitle = ('%s  (%s)') % (sMovieTitle, sHost)  
