@@ -44,7 +44,7 @@ ANIM_NEWS = (URL_MAIN + 'url', 'showAnimes') #anime nouveautés
 ANIM_ANIMS = (URL_MAIN + 'url', 'showAnimes') #anime vrac
 ANIM_VFS = (URL_MAIN + 'url', 'showAnimes') #anime VF
 ANIM_VOSTFRS = (URL_MAIN + 'url', 'showAnimes') #anime VOSTFR
-ANIM_MOVIES = (URL_MAIN + 'url'', 'showAnimes') #anime film
+ANIM_MOVIES = (URL_MAIN + 'url', 'showAnimes') #anime film
 ANIM_GENRES = (True, 'showGenre') #anime genre
 
 DOC_DOCS = (URL_MAIN + 'url', 'showOthers') #Documentaire
@@ -208,7 +208,7 @@ def __checkForNextPage(sHtmlContent): #cherche la page suivante
     oParser = cParser()
     sPattern = '<div class="navigation".+? <span.+? <a href="(.+?)">'
     aResult = oParser.parse(sHtmlContent, sPattern)
-    print aResult #affiche le result dans le log
+    print (aResult) #affiche le result dans le log
     if (aResult[0] == True):
         return aResult[1][0]
 
