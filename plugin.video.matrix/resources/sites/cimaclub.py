@@ -2,7 +2,7 @@
 # zombi https://github.com/zombiB/zombi-addons/
 
 import re
-
+import xbmcgui
 from resources.lib.gui.hoster import cHosterGui
 from resources.lib.gui.gui import cGui
 from resources.lib.handler.inputParameterHandler import cInputParameterHandler
@@ -35,7 +35,7 @@ if (aResult[0]):
 	
 MOVIE_FAM = (URL_MAIN + '/getposts?genre=%D8%B9%D8%A7%D8%A6%D9%84%D9%8A&category=1', 'showMovies')
 MOVIE_TOP = (URL_MAIN + '/getposts?type=one&data=rating', 'showMovies')
-MOVIE_EN = (URL_MAIN + '/category/%D8%A7%D9%81%D9%84%D8%A7%D9%85-%D8%A7%D8%AC%D9%86%D8%A8%D9%89-aflam-onilne18', 'showMovies')
+MOVIE_EN = (URL_MAIN + '/category/أفلام2/افلام-اجنبي-2', 'showMovies')
 MOVIE_AR = (URL_MAIN + '/category/%D8%A7%D9%81%D9%84%D8%A7%D9%85-%D8%B9%D8%B1%D8%A8%D9%8A-%D8%A7%D9%88%D9%86-%D9%84%D8%A7%D9%8A%D9%86', 'showMovies')
 MOVIE_TURK = (URL_MAIN + '/category/%D8%A7%D9%81%D9%84%D8%A7%D9%85-%D8%AA%D8%B1%D9%83%D9%8A%D8%A9', 'showMovies')
 MOVIE_HI = (URL_MAIN + '/category/%D8%A7%D9%81%D9%84%D8%A7%D9%85-%D9%87%D9%86%D8%AF%D9%8A', 'showMovies')
@@ -169,31 +169,45 @@ def showGenres():
     oGui.setEndOfDirectory()   
 
 def showMovies(sSearch = ''):
-    oGui = cGui()
-    if sSearch:
-      sUrl = sSearch
-    else:
-        oInputParameterHandler = cInputParameterHandler()
-        sUrl = oInputParameterHandler.getValue('siteUrl')
- 
-    oRequestHandler = cRequestHandler(sUrl)
-    sHtmlContent = oRequestHandler.request()
-     # (.+?) ([^<]+) .+?
+  oGui = cGui()
+  if sSearch:
+    sUrl = sSearch
+  else:
+    oInputParameterHandler = cInputParameterHandler()
+    sUrl = oInputParameterHandler.getValue('siteUrl')
+  #  xbmcgui.Dialog().ok("adrees",sUrl )
 
-    sPattern = 'class="fullClick">.+?<a href="(.+?)" data-src="(.+?)" class=.+?<h3>(.+?)</h3>'
+    oRequestHandler = cRequestHandler(sUrl)
+    sHtmlContent=oRequestHandler.request()
+ #   xbmcgui.Dialog().ok("YES", f"Found {len(sHtmlContent)} results")
+
+    # Adjusted the regex pattern to match the HTML structure correctly
+    sPattern = r'<div class="content-box">.*?<a href="([^"]+)" title="([^"]+)" class="fullClick"></a>.*?<a href="([^"]+)" class="image">.*?<img src="([^"]+)" alt="[^"]*">.*?<span class="category">(.*?)</span>.*?<div class="hvr">.*?<div class="genres">.*?<span>(.*?)</span>(?:.*?<span>(.*?)</span>)?.*?<a href="([^"]+)"><h3>(.*?)</h3></a>'
+    aResult = re.findall(sPattern, sHtmlContent,re.DOTALL)
+    
+ #   if aResult:
+ #         xbmcgui.Dialog().ok("YES", f"Found {len(aResult)} results")
+  #  else:
+ #         xbmcgui.Dialog().ok("NO", "No results found")
+
 
 
     oParser = cParser()
-    aResult = oParser.parse(sHtmlContent, sPattern)
-	
-	
-    if aResult[0]:
+   
+
+    # Check if any result is found
+   
+      
+    
+      
+
+    if aResult:
         oOutputParameterHandler = cOutputParameterHandler()  
-        for aEntry in aResult[1]:
+        for aEntry in aResult:
  
-            sTitle = aEntry[2].replace("مشاهدة","").replace("مشاهده","").replace("مترجم","").replace("فيلم","").replace("اون لاين","").replace("اونلاين","").replace("برنامج","").replace("بجودة","").replace("WEB-DL","").replace("BRRip","").replace("720p","").replace("HD-TC","").replace("HDRip","").replace("HD-CAM","").replace("DVDRip","").replace("BluRay","").replace("1080p","").replace("WEBRip","").replace("WEB-dl","").replace("4K","").replace("BDRip","").replace("HDCAM","").replace("HDTC","").replace("HDTV","").replace("HD","").replace("720","").replace("HDCam","").replace("Full HD","").replace("1080","").replace("HC","").replace("Web-dl","").replace("مدبلج للعربية","مدبلج").replace("انيمي","")
+            sTitle = aEntry[1].replace("مشاهدة","").replace("مشاهده","").replace("مترجم","").replace("فيلم","").replace("اون لاين","").replace("اونلاين","").replace("برنامج","").replace("بجودة","").replace("WEB-DL","").replace("BRRip","").replace("720p","").replace("HD-TC","").replace("HDRip","").replace("HD-CAM","").replace("DVDRip","").replace("BluRay","").replace("1080p","").replace("WEBRip","").replace("WEB-dl","").replace("4K","").replace("BDRip","").replace("HDCAM","").replace("HDTC","").replace("HDTV","").replace("HD","").replace("720","").replace("HDCam","").replace("Full HD","").replace("1080","").replace("HC","").replace("Web-dl","").replace("مدبلج للعربية","مدبلج").replace("انيمي","")
             siteUrl = aEntry[0].replace('/film/','/watch/').replace('/post/','/watch/')
-            sThumb = aEntry[1].replace('(','').replace(')','')
+            sThumb = aEntry[2].replace('(','').replace(')','')
             sDesc = ''
             sYear = ''
             m = re.search('([1-2][0-9]{3})', sTitle)
@@ -211,6 +225,7 @@ def showMovies(sSearch = ''):
 
  
         sNextPage = __checkForNextPage(sHtmlContent)
+#        xbmcgui.Dialog().ok("adrees",sNextPage )
         if sNextPage:
             oOutputParameterHandler = cOutputParameterHandler()
             oOutputParameterHandler.addParameter('siteUrl', sNextPage)
@@ -442,7 +457,7 @@ def showSeries():
         oGui.setEndOfDirectory()
  
 def __checkForNextPage(sHtmlContent):
-    sPattern = '<li class="active"><a href="javascript:;">.+?</a></li><li><a href="(.+?)">'
+    sPattern =r'<a class="page-numbers" href="([^"]+)"[^>]*>\d+</a>'
 	
     oParser = cParser()
     aResult = oParser.parse(sHtmlContent, sPattern)
@@ -460,6 +475,7 @@ def showServers():
     sUrl = oInputParameterHandler.getValue('siteUrl')
     sMovieTitle = oInputParameterHandler.getValue('sMovieTitle')
     sThumb = oInputParameterHandler.getValue('sThumb')
+ #   xbmcgui.Dialog().ok("addrees",sUrl )
  
     oRequestHandler = cRequestHandler(sUrl)
     oRequestHandler.addHeaderEntry('User-Agent', 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:45.0) Gecko/20100101 Firefox/45.0')
