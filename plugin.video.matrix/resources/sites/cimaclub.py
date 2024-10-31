@@ -2,9 +2,13 @@
 # zombi https://github.com/zombiB/zombi-addons/
 
 import re
+import socket
+import requests
+from bs4 import BeautifulSoup
 import urllib.parse
+import urllib.parse as paseurl
 from urllib.parse import urlparse, parse_qs
-import xbmcgui
+import  xbmcgui
 from resources.lib.gui.hoster import cHosterGui
 from resources.lib.gui.gui import cGui
 from resources.lib.handler.inputParameterHandler import cInputParameterHandler
@@ -59,8 +63,8 @@ DOC_NEWS = (URL_MAIN + '/category/%D8%A7%D9%81%D9%84%D8%A7%D9%85-%D9%88%D8%AB%D8
 DOC_SERIES = (URL_MAIN + '/category/%D9%85%D8%B3%D9%84%D8%B3%D9%84%D8%A7%D8%AA-%D9%88%D8%AB%D8%A7%D8%A6%D9%82%D9%8A%D8%A9', 'showSerie')
 SPORT_NEWS = (URL_MAIN + '/category/%D8%A7%D9%84%D9%85%D8%B5%D8%A7%D8%B1%D8%B9%D9%87-wwe', 'showMovies')
 URL_SEARCH = (URL_MAIN + '/search?s=', 'showMovies')
-URL_SEARCH_MOVIES = (URL_MAIN + '/search?s=%D9%81%D9%8A%D9%84%D9%85+', 'showMovies')
-URL_SEARCH_SERIES = (URL_MAIN + '/search?s=', 'showSerie')
+URL_SEARCH_MOVIES = (URL_MAIN + '/?s=', 'Search_movie_marix')
+URL_SEARCH_SERIES = (URL_MAIN + '/?s=', 'Search_Series_marix')
 URL_SEARCH_MISC = (URL_MAIN + '/search?s=', 'showSerie')
 FUNCTION_SEARCH = 'showMovies'
 
@@ -73,7 +77,7 @@ def load():
 	
     oGui.addDir(SITE_IDENTIFIER, 'showSeriesSearch', 'SEARCH_SERIES', icons + '/Search.png', oOutputParameterHandler)
 
-    oGui.addDir(SITE_IDENTIFIER, 'showSearchAll', 'Search All', icons + '/Search.png', oOutputParameterHandler)
+  #  oGui.addDir(SITE_IDENTIFIER, 'showSearchAll', 'Search All', icons + '/Search.png', oOutputParameterHandler)
     
     oOutputParameterHandler.addParameter('siteUrl', RAMADAN_SERIES[0])
     oGui.addDir(SITE_IDENTIFIER, 'showSeries', 'مسلسلات رمضان', icons + '/Ramadan.png', oOutputParameterHandler)
@@ -130,7 +134,7 @@ def showSearchAll():
  
     sSearchText = oGui.showKeyBoard()
     if sSearchText:
-        sUrl = URL_MAIN + '/search?s='+sSearchText
+        sUrl = ' https://cimaclubs.online/' + '?s='+sSearchText
         showSerie(sUrl)
         oGui.setEndOfDirectory()
         return  
@@ -140,19 +144,24 @@ def showSearch():
  
     sSearchText = oGui.showKeyBoard()
     if sSearchText:
-        sUrl = URL_MAIN + '/search?s=%D9%81%D9%8A%D9%84%D9%85+'+sSearchText
-        showMovies(sUrl)
-        oGui.setEndOfDirectory()
+        word_arabic(sSearchText,"فيلم")
+        search_url=' https://cimaclubs.online/'
+        sUrl = search_url + '?s='+sSearchText +"&types=افلام"
+#        showMovies(sUrl)
+        sreach(sUrl,"فيلم",True)
+       # oGui.setEndOfDirectory()
         return
  
 def showSeriesSearch():
     oGui = cGui()
- 
+  
     sSearchText = oGui.showKeyBoard()
     if sSearchText:
-        sUrl = URL_MAIN + '/search?s='+sSearchText
-        showSerie(sUrl)
-        oGui.setEndOfDirectory()
+        word_arabic(sSearchText,"مسلسل") 
+        search_url=' https://cimaclubs.online/'
+        sUrl = search_url + '?s='+sSearchText +"&types=مسلسلات"
+#        showMovies(sUrl)
+        sreach(sUrl,"مسلسل",True)
         return
 		
 def showGenres():
@@ -171,28 +180,97 @@ def showGenres():
         oGui.addDir(SITE_IDENTIFIER, 'showSerie', sTitle, icons + '/Genres.png', oOutputParameterHandler)
        
     oGui.setEndOfDirectory()   
+def Search_movie_marix(sSearch):
+    surl=sSearch.replace(URL_MAIN,"https://cimaclubs.online")+"&types=افلام"
+    sreach(surl,"فيلم",False)
 
+def Search_Series_marix(sSearch):
+    Result=  paramter(sSearch,'s')
+    word_arabic(Result,"مسلسل")
+    surl=sSearch.replace(URL_MAIN,"https://cimaclubs.online")+"&types=مسلسلات"
+     
+    sreach(surl,"مسلسل",False)
+
+ #   # xbmcgui.Dialog().ok("",surl)
+def paramter(url,para):
+    parsed_url = urlparse(url)
+    params = parse_qs(parsed_url.query)
+
+    # Extract the 's' and 'types' parameters, fallback to None if not present
+    parameter_search = params.get(para, [None])[0]
+    return parameter_search
+
+    pass
+def word_arabic(sSearch,mov):  
+
+  oGui = cGui()
+  if re.search(r'[\u0600-\u06FF]', sSearch):
+       if(mov=="فيلم"):
+        siteUrl=f'https://cimaclub.watch/فيلم-{sSearch}'+"/see/"
+   #     # xbmcgui.Dialog().ok("aResult",siteUrl)
+        oOutputParameterHandler = cOutputParameterHandler()
+        oOutputParameterHandler.addParameter('siteUrl',siteUrl)
+        oOutputParameterHandler.addParameter('sMovieTitle', sSearch)
+        oGui.addMovie(SITE_IDENTIFIER, 'showServers', sSearch, '', "", "", oOutputParameterHandler)
+       else:
+      
+#       sSearch = "your_series_name"  # Replace this with the actual search string
+        siteUrl = f"https://cimaclub.watch/مسلسل-{sSearch}-حلقة-1/".replace(" ","-")
+
+# Check if the first URL is valid
+   #    if check_url_Series(siteUrl):
+   #     # xbmcgui.Dialog().ok("aResult",siteUrl)
+        oOutputParameterHandler = cOutputParameterHandler()
+        oOutputParameterHandler.addParameter('siteUrl',siteUrl)
+        oOutputParameterHandler.addParameter('sMovieTitle', sSearch)
+     #  oOutputParameterHandler.addParameter('sThumb', sSearch)
+        oGui.addTV(SITE_IDENTIFIER, 'seasones', sSearch, '', "", '', oOutputParameterHandler)
+     #  else:
+       siteUrl=f'https://cimaclub.watch/مسلسل-{sSearch}-موسم-1-حلقة-1/'.replace(" ","-")
+      #    if check_url_Series(siteUrl):
+       # xbmcgui.Dialog().ok("aResult",siteUrl)
+       oOutputParameterHandler = cOutputParameterHandler()
+       oOutputParameterHandler.addParameter('siteUrl',siteUrl)
+       oOutputParameterHandler.addParameter('sMovieTitle', sSearch)
+     #  oOutputParameterHandler.addParameter('sThumb', sSearch)
+       oGui.addTV(SITE_IDENTIFIER, 'seasones', sSearch, '', "", '', oOutputParameterHandler)
+         
+      #pass
+    #https://cimaclub.watch/فيلم-وقت-إضافي-2024/
+def check_url_Series(url):
+    try:
+        response = requests.get(url)
+        if response.status_code == 200:
+            return True
+        else:
+            
+            return False
+    except requests.exceptions.RequestException as e:
+       
+        return False
+   
 def showMovies(sSearch = ''):
   oGui = cGui()
   if sSearch:
     sUrl = sSearch
+   
   else:
     oInputParameterHandler = cInputParameterHandler()
     sUrl = oInputParameterHandler.getValue('siteUrl')
-  #  xbmcgui.Dialog().ok("adrees",sUrl )
+  #  # xbmcgui.Dialog().ok("adrees",sUrl )
 
     oRequestHandler = cRequestHandler(sUrl)
     sHtmlContent=oRequestHandler.request()
- #   xbmcgui.Dialog().ok("YES", f"Found {len(sHtmlContent)} results")
+ #   # xbmcgui.Dialog().ok("YES", f"Found {len(sHtmlContent)} results")
 
     # Adjusted the regex pattern to match the HTML structure correctly
     sPattern = r'<div class="content-box">.*?<a href="([^"]+)" title="([^"]+)" class="fullClick"></a>.*?<a href="([^"]+)" class="image">.*?<img src="([^"]+)" alt="[^"]*">.*?<span class="category">(.*?)</span>.*?<div class="hvr">.*?<div class="genres">.*?<span>(.*?)</span>(?:.*?<span>(.*?)</span>)?.*?<a href="([^"]+)"><h3>(.*?)</h3></a>'
     aResult = re.findall(sPattern, sHtmlContent,re.DOTALL)
     
  #   if aResult:
- #         xbmcgui.Dialog().ok("YES", f"Found {len(aResult)} results")
+ #         # xbmcgui.Dialog().ok("YES", f"Found {len(aResult)} results")
   #  else:
- #         xbmcgui.Dialog().ok("NO", "No results found")
+ #         # xbmcgui.Dialog().ok("NO", "No results found")
 
 
 
@@ -230,7 +308,7 @@ def showMovies(sSearch = ''):
 
  
         sNextPage = __checkForNextPage(sHtmlContent)
-#        xbmcgui.Dialog().ok("adrees",sNextPage )
+#        # xbmcgui.Dialog().ok("adrees",sNextPage )
         if sNextPage:
             oOutputParameterHandler = cOutputParameterHandler()
             oOutputParameterHandler.addParameter('siteUrl', sNextPage)
@@ -239,15 +317,160 @@ def showMovies(sSearch = ''):
     if not sSearch:
         oGui.setEndOfDirectory()
 
+
+def sreach(sUrl,search,flag=False ):
+    oGui = cGui()
+    # Initialize the input and request handlers
+    oInputParameterHandler = cInputParameterHandler()
+    oRequestHandler = cRequestHandler(sUrl)
+    match = re.search(r'/page/(\d+)/', sUrl)
+    next_page = int(match.group(1)) if match else 1
+  #  next_page = oInputParameterHandler.getValue("next_page")
+   
+    sreachSurl=sUrl
+    
+  #  new_page=sUrl.replace("/?s","/page/*newpage/?s")
+    
+   # # xbmcgui.Dialog().ok("new_page``", new_page)
+  #  # xbmcgui.Dialog().ok("Block Post",sUrl )
+    
+
+    # Make a request to get the HTML content
+    sHtmlContent = oRequestHandler.request()
+
+    # Parse the HTML content using BeautifulSoup
+    soup = BeautifulSoup(sHtmlContent, 'html.parser')
+
+    # Find the div with class "block-post"
+    html = soup.find_all('div', class_='col-xs-6th col-sm-6th col-md-6th col-lg-6th')
+    sPattern = r'<a href="([^"]*)" title="([^"]*)">\s*<div class="poster"><img[^>]*data-img="([^"]*)"'
+
+
+   
+    # Check if the div was found and display its content
+    if html:
+       for aEntry in html:
+         div_content = str(aEntry)
+            
+            # Use re.search to find the title in the <a> tag
+         match = re.search(sPattern, div_content)
+         url=match[1]
+         encoded_string=url
+         decoded_string = urllib.parse.unquote(encoded_string)
+         oOutputParameterHandler = cOutputParameterHandler() 
+          #https://cimaclub.watch/فيلم-#f-مترجم/
+          #https://cimaclubs.online/movies/فيلم-long-gone-heroes-2024-مترجم-اون-لاين/
+         if search=="فيلم":
+          
+          if  search in  decoded_string:
+       
+           sUrl="https://cimaclub.watch/فيلم-#f-مترجم/"
+         
+           namefile=decoded_string.replace("https://cimaclubs.online/movies/فيلم-","" ).replace("-مترجم-اون-لاين/","").replace("HD","").replace("مشاهدة","").replace("كامل","")
+           sUrl=sUrl.replace("#f",namefile)+"see/"
+           
+
+           sTitle = match[2].replace("فيلم","").replace("لاين", "").replace("مترجم","").replace("اون","").replace("HD","").replace("مشاهدة","").replace("كامل","").replace("(", "").replace(")", "").replace(" ", "-")
+           if re.search(r'[\u0600-\u06FF]', sTitle):
+            sUrl = f'https://cimaclub.watch/فيلم-{sTitle}/see/'
+        #    # xbmcgui.Dialog().ok("",sUrl)
+      #      pass
+          else:   
+             sUrl=f"https://cimaclub.watch/فيلم-{sTitle}-مترجم/".replace(" ", "-")+"see/"
+           
+
+          sThumb = match[3]
+          oOutputParameterHandler.addParameter('siteUrl',sUrl)
+          oOutputParameterHandler.addParameter('sMovieTitle', sTitle)
+          oOutputParameterHandler.addParameter('sThumb', sThumb)
+          oGui.addMovie(SITE_IDENTIFIER, 'showServers', sTitle, '', sThumb, "", oOutputParameterHandler)
+      #    # xbmcgui.Dialog().ok("url", sUrl)
+         #https://cimaclubs.online/page/2/?s=den&types=%D8%A7%D9%81%D9%84%D8%A7%D9%85&types=%D8%A7%D9%81%D9%84%D8%A7%D9%85
+         #https://cimaclubs.online/?s=den&types=%D8%A7%D9%81%D9%84%D8%A7%D9%85
+
+         elif search=="مسلسل":
+             
+              if  search in  decoded_string:
+            #   decoded_string=re.sub("-\d+-","",decoded_string)
+            #   # xbmcgui.Dialog().ok("url", decoded_string)
+               sUrl="https://cimaclub.watch/مسلسل-#f-موسم-1-حلقة-1/"
+               namefile = decoded_string.replace("https://cimaclubs.online/series/مسلسل-", "").replace("-مترجم", " ") .replace("-الموسم","") .replace("/","").replace("HD","")            
+               namefile = re.sub(r'-\d+-', '', namefile)
+               namefile = re.sub(r'-\d+', '', namefile)
+               namefile = namefile.replace(" ", "")
+            #   # xbmcgui.Dialog().ok("namefile", namefile)
+               sUrl=sUrl.replace("#f",namefile)
+             #  # xbmcgui.Dialog().ok("namefile", namefile)
+            #   # xbmcgui.Dialog().ok("namefile", sUrl)
+
+               sTitle =namefile.replace("-","  ")
+
+               sThumb = match[3]
+               oOutputParameterHandler.addParameter('siteUrl',sUrl)
+               oOutputParameterHandler.addParameter('sMovieTitle', sTitle)
+               oOutputParameterHandler.addParameter('sThumb', sThumb)
+               oGui.addTV(SITE_IDENTIFIER, 'seasones', sTitle, '', sThumb, '', oOutputParameterHandler)
+            
+            
+            
+              pass
+    else:
+   #     # xbmcgui.Dialog().ok("Block Post", "No div found")
+        pass
+   
+  #  next_page = next_page + 1
+
+   # # xbmcgui.Dialog().ok("message", next_page)
+  #  new_page = new_page.replace("*newpage", str(next_page)) 
+
+   
+    oOutputParameterHandler = cOutputParameterHandler()
+    oOutputParameterHandler.addParameter('siteUrl', sreachSurl)
+    oOutputParameterHandler.addParameter('next_page', next_page+1)
+    
+    ##;types=افلام
+    oGui.addDir(SITE_IDENTIFIER, 'next_pages', '[COLOR teal]Next >>>[/COLOR]', icons + '/Next.png', oOutputParameterHandler)
+    if flag :
+     oGui.setEndOfDirectory()
+        
+#\\\\\\\\\\\\
+
+def next_pages():
+     oGui = cGui()
+     oInputParameterHandler = cInputParameterHandler()
+    
+    
+    
+     sUrl = oInputParameterHandler.getValue('siteUrl')
+     next_page= oInputParameterHandler.getValue('next_page')
+     parsed_url =paseurl.urlparse(sUrl)
+     
+     params = paseurl.parse_qs(parsed_url.query)
+
+     prameter_sreach=params.get('s', [None])[0]
+     prameter_type=params.get('types', [None])[0]
+     ## xbmcgui.Dialog().ok("prameter_sreach", f'{next_page}')
+     #types=افلام#038;types=افلام
+     sreachSurl = f'https://cimaclubs.online/page/{next_page}/?s={prameter_sreach} &types= 038#{prameter_type};types={prameter_type}'
+  
+     if  prameter_type == 'افلام':
+
+      sreach(sreachSurl,"فيلم",True)
+     else :
+      sreach(sreachSurl,"مسلسل",True)
+
+
+     pass
 def showSerie(sSearch = ''):
-   # xbmcgui.Dialog().ok("","hi")
+   # # xbmcgui.Dialog().ok("","hi")
     oGui = cGui()
     if sSearch:
       sUrl = sSearch
+   
     else:
         oInputParameterHandler = cInputParameterHandler()
         sUrl = oInputParameterHandler.getValue('siteUrl')
-   #     xbmcgui.Dialog().ok("",sUrl)
+   #     # xbmcgui.Dialog().ok("",sUrl)
     oRequestHandler = cRequestHandler(sUrl)
     sHtmlContent = oRequestHandler.request()
  
@@ -265,7 +488,7 @@ def showSerie(sSearch = ''):
  
             sTitle = aEntry[1].replace("مشاهدة","").replace("مشاهده","").replace("مسلسل","").replace("انيمي","").replace("انمي","").replace("انمى","").replace("مترجمة","").replace("برنامج","").replace("مترجم","").replace("مترجمة","").replace("فيلم","").replace("اون لاين","").replace("WEB-DL","").replace("BRRip","").replace("720p","").replace("HD-TC","").replace("HDRip","").replace("HD-CAM","").replace("DVDRip","").replace("BluRay","").replace("1080p","").replace("WEBRip","").replace("WEB-dl","").replace("مترجم ","").replace("مدبلج للعربية","مدبلج").replace("مشاهدة وتحميل","").replace("اون لاين","").replace("انيمي","").replace("كامل","") . replace("موسم ","") . replace("حلقة","").replace(" والاخيرة","").replace("والأخيرة","")
             sTitle=  re.sub("[0-9]", "", sTitle)
-     #       xbmcgui.Dialog().ok("",sTitle)
+     #       # xbmcgui.Dialog().ok("",sTitle)
             siteUrl = aEntry[0].replace("/episode/","/watch/").replace("/post/","/watch/")
           
             sThumb = aEntry[2].replace("(","").replace(")","")
@@ -276,7 +499,7 @@ def showSerie(sSearch = ''):
               
                 sDisplayTitle=sDisplayTitle
                 if sDisplayTitle  not in titles:
-                   #  xbmcgui.Dialog().ok("",sDisplayTitle)
+                   #  # xbmcgui.Dialog().ok("",sDisplayTitle)
                      titles.append(sDisplayTitle)
 
                      oOutputParameterHandler = cOutputParameterHandler()
@@ -303,7 +526,7 @@ def showSerie(sSearch = ''):
 	
     if aResult[0]:
         oOutputParameterHandler = cOutputParameterHandler()  
-        xbmcgui.Dialog().ok("",  str(aResult[0]))
+        # xbmcgui.Dialog().ok("",  str(aResult[0]))
         for aEntry in aResult[1]:
  
             if "الحلقة" in aEntry[2]:
@@ -342,7 +565,7 @@ def seasones():
     oInputParameterHandler = cInputParameterHandler()
     sUrl = oInputParameterHandler.getValue('siteUrl')
     
- #   xbmcgui.Dialog().ok("",sUrl)
+ #   # xbmcgui.Dialog().ok("",sUrl)
     sMovieTitle = oInputParameterHandler.getValue('sMovieTitle')
     sThumb = oInputParameterHandler.getValue('sThumb')
 
@@ -361,17 +584,17 @@ def seasones():
      oOutputParameterHandler = cOutputParameterHandler() 
      for aEntry in aResult:
             aEntry_sUrl=aEntry[0]
- #           xbmcgui.Dialog().ok("season",str(aEntry[0]))
+ #           # xbmcgui.Dialog().ok("season",str(aEntry[0]))
             season="موسم"
             Ns = f"-{Nseason+1}-"
             sreach_season=season + Ns
-#            xbmcgui.Dialog().ok("season",str(sreach_season))
+#            # xbmcgui.Dialog().ok("season",str(sreach_season))
             encoded_string= aEntry_sUrl
             decoded_string = urllib.parse.unquote(encoded_string)
             if sreach_season in decoded_string:
-         #     xbmcgui.Dialog().ok("season",str(aEntry[0]))
+         #     # xbmcgui.Dialog().ok("season",str(aEntry[0]))
               Nseason += 1
- #    xbmcgui.Dialog().ok("season",str(Nseason))
+ #    # xbmcgui.Dialog().ok("season",str(Nseason))
     if Nseason > 1:
      for index in range(Nseason):
         oOutputParameterHandler = cOutputParameterHandler()
@@ -387,7 +610,7 @@ def seasones():
 
     # oGui.setEndOfDirectory()  # يمكنك فك هذا السطر إذا كان مطلوبًا
     else:
-#     xbmcgui.Dialog().ok("Season", sUrl)  # تأكد أن الحوار يظهر المعلومات المطلوبة
+#     # xbmcgui.Dialog().ok("Season", sUrl)  # تأكد أن الحوار يظهر المعلومات المطلوبة
 
      oOutputParameterHandler = cOutputParameterHandler()
      oOutputParameterHandler.addParameter('siteUrl', sUrl)
@@ -412,7 +635,7 @@ def showEpisodes():
     
     str_season="موسم"
     Ns = f"-{season}-"
- #   xbmcgui.Dialog().ok("",str_season+Ns)
+ #   # xbmcgui.Dialog().ok("",str_season+Ns)
     is_mach=str_season+Ns
     sMovie_Title = oInputParameterHandler.getValue('sMovieTitle')
     sThumb = oInputParameterHandler.getValue('sThumb')
@@ -436,13 +659,13 @@ def showEpisodes():
             
             sUrl=aEntry[0]+"see/"
             sMovieTitle = str(aEntry[1])
-    #        xbmcgui.Dialog().ok("",aEntry[0])
+    #        # xbmcgui.Dialog().ok("",aEntry[0])
             oOutputParameterHandler.addParameter('siteUrl',sUrl)
             oOutputParameterHandler.addParameter('sMovieTitle' ,sMovie_Title +sMovieTitle)
             encoded_string= sUrl
             decoded_string = urllib.parse.unquote(encoded_string)
          #   if "موسم" in sUrl:
-         #   xbmcgui.Dialog().ok("",decoded_string)
+         #   # xbmcgui.Dialog().ok("",decoded_string)
             oGui.addEpisode(SITE_IDENTIFIER, 'showServers',f" {sMovie_Title}   {sMovieTitle}", '', sThumb, "", oOutputParameterHandler)
 
 
@@ -459,29 +682,31 @@ def showEpisodes():
 
            
               sMovieTitle=aEntry[1]
-    #        xbmcgui.Dialog().ok("",aEntry[0])
+    #        # xbmcgui.Dialog().ok("",aEntry[0])
               oOutputParameterHandler.addParameter('siteUrl',sUrl)
               oOutputParameterHandler.addParameter('sMovieTitle', f"S{Ns.replace('-', '')}{sMovie_Title.replace('الحلقة', 'Ep')} {sMovieTitle}")
 
           
          #   if "موسم" in sUrl:
-         #   xbmcgui.Dialog().ok("",decoded_string)
+         #   # xbmcgui.Dialog().ok("",decoded_string)
               oGui.addEpisode(SITE_IDENTIFIER, 'showServers',f"[COLOR red](S{Ns.replace('-', '')})[/COLOR] {sMovie_Title} {sMovieTitle.replace('الحلقة', 'Ep')}", '', sThumb, '', oOutputParameterHandler)
      oGui.setEndOfDirectory()
      pass
     
           
     
-        # عرض الرابط والعنوان باستخدام xbmcgui.Dialog
-       # xbmcgui.Dialog().ok(title, link
+        # عرض الرابط والعنوان باستخدام # xbmcgui.Dialog
+       # # xbmcgui.Dialog().ok(title, link
     else:
-      xbmcgui.Dialog().ok("worring", "no")
+        pass
+      # xbmcgui.Dialog().ok("worring", "no")
     #worried
+    # '''
     if aResult:
       
         oOutputParameterHandler = cOutputParameterHandler()  
         for aEntry in aResult:
-      #      xbmcgui.Dialog().ok("",aEntry[0])
+      #      # xbmcgui.Dialog().ok("",aEntry[0])
  
             siteUrl = aEntry[0].replace("/episode/","/watch/").replace("/post/","/watch/")
             if 'season' in siteUrl:
@@ -510,7 +735,7 @@ def showEpisodes():
             oGui.addDir(SITE_IDENTIFIER, 'showEpisodes', '[COLOR teal]Next >>>[/COLOR]', icons + '/Next.png', oOutputParameterHandler)
        
     oGui.setEndOfDirectory()
-	#'''''
+	#'''''wix
 def showEpisodes1():
     oGui = cGui()
     
@@ -611,15 +836,25 @@ def __checkForNextPage(sHtmlContent):
     if aResult[0]:
        
         parsed_url = urlparse(sUrl)
-        xbmcgui.Dialog().ok("",  sUrl )
+       # # xbmcgui.Dialog().ok("",  sUrl )
 
 # Extract query parameters
         query_params = parse_qs(parsed_url.query)
 
 # Get the 'page' parameter value
         page_value = query_params.get('page', [None])[0]
-        xbmcgui.Dialog().ok("",  page_value )
-        return aResult[1][0]
+
+# Check if page_value is not None before trying to use replace
+        if page_value:
+          page_value =  int(page_value.replace('/', ''))
+          returnRul = sUrl.replace(f"?page={page_value}/", f"?page={page_value + 1}/")
+      #    # xbmcgui.Dialog().ok("",  returnRul )
+
+        else:
+         page_value = "Page parameter not found"
+         returnRul=f"{sUrl}?page=2/ "
+   #     # xbmcgui.Dialog().ok("",  returnRul )
+        return returnRul
 
     return False
   
@@ -647,7 +882,7 @@ def showServers():
     
     if aResult and len(aResult[1]) > 0:
         spost = aResult[1][0]
-  #      xbmcgui.Dialog().ok("Success", "Post ID found: " + spost)
+  #      # xbmcgui.Dialog().ok("Success", "Post ID found: " + spost)
     # (.+?) ([^<]+) .+?
 
     sPattern =r'data-embed="(https?://[^\s]+)"'
@@ -657,20 +892,21 @@ def showServers():
 # Check if we found matches
     if aResult and len(aResult) > 0:
      spost = aResult[0]  # First match
-  #   xbmcgui.Dialog().ok("Success", "Post ID found: " + spost)
+  #   # xbmcgui.Dialog().ok("Success", "Post ID found: " + spost)
     else:
-     xbmcgui.Dialog().ok("Error", "No match found")
+        pass
+     # xbmcgui.Dialog().ok("Error", "No match found")
 
 # Loop through the results (if any)
     for aEntry in aResult:
-  #   xbmcgui.Dialog().ok("aEntry loop", aEntry)
-  #   xbmcgui.Dialog().ok("aEntry loop: " + aEntry)
+  #   # xbmcgui.Dialog().ok("aEntry loop", aEntry)
+  #   # xbmcgui.Dialog().ok("aEntry loop: " + aEntry)
             
 
 
      sId = URL_MAIN + '/ajaxCenter?_action=getserver&_post_id='+spost
      siteUrl = sId+'&serverid='+aEntry[0]
-     #xbmcgui.Dialog().ok("siteUrl :", siteUrl)
+     ## xbmcgui.Dialog().ok("siteUrl :", siteUrl)
 			
      oRequestHandler = cRequestHandler(siteUrl)
      oRequestHandler.addHeaderEntry('User-Agent', 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:45.0) Gecko/20100101 Firefox/45.0')
@@ -685,19 +921,19 @@ def showServers():
  #   aResult = re.findall(sPattern, sData,re.DOTALL)
 
    # if aResult:
-  #   xbmcgui.Dialog().ok("Parsed Data", str(aResult))
+  #   # xbmcgui.Dialog().ok("Parsed Data", str(aResult))
  #    pass
   #  else:
-#     xbmcgui.Dialog().ok("No Data Found", "No matches for the pattern.")
+#     # xbmcgui.Dialog().ok("No Data Found", "No matches for the pattern.")
 #     pass
 	
     if aResult:
               
                for aEntry in aResult:
-                   #xbmcgui.Dialog().ok("aEntry ", str(aEntry))
+                   ## xbmcgui.Dialog().ok("aEntry ", str(aEntry))
         
                    url = str(aEntry).strip()
-                 #  xbmcgui.Dialog().ok("url", url)
+                 #  # xbmcgui.Dialog().ok("url", url)
                    sTitle = " "
                    sThumb = sThumb
                    if 'govid' in url:
@@ -771,7 +1007,7 @@ def showServers1():
     sUrl = oInputParameterHandler.getValue('siteUrl')
     sMovieTitle = oInputParameterHandler.getValue('sMovieTitle')
     sThumb = oInputParameterHandler.getValue('sThumb')
- #   xbmcgui.Dialog().ok("addrees",sUrl )
+ #   # xbmcgui.Dialog().ok("addrees",sUrl )
  
     oRequestHandler = cRequestHandler(sUrl)
     oRequestHandler.addHeaderEntry('User-Agent', 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:45.0) Gecko/20100101 Firefox/45.0')
