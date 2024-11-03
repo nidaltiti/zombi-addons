@@ -902,7 +902,7 @@ def showServers():
   #   # xbmcgui.Dialog().ok("aEntry loop", aEntry)
   #   # xbmcgui.Dialog().ok("aEntry loop: " + aEntry)
             
-
+#
 
      sId = URL_MAIN + '/ajaxCenter?_action=getserver&_post_id='+spost
      siteUrl = sId+'&serverid='+aEntry[0]
