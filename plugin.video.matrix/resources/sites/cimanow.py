@@ -16,7 +16,7 @@ from resources.lib.comaddon import VSlog, siteManager, addon
 from resources.lib.parser import cParser
 from bs4 import BeautifulSoup
 import requests
-
+import xbmcgui
 import re
 import base64
 
@@ -31,6 +31,7 @@ UA = 'ipad'
 
 URL_MAIN = siteManager().getUrlMain(SITE_IDENTIFIER)
 
+
 MOVIE_EN = (URL_MAIN + '/category/افلام-اجنبية/', 'showMovies')
 MOVIE_AR = (URL_MAIN + '/category/%D8%A7%D9%81%D9%84%D8%A7%D9%85-%D8%B9%D8%B1%D8%A8%D9%8A%D8%A9/', 'showMovies')
 
@@ -42,7 +43,7 @@ SERIE_TR = (URL_MAIN + '/category/%d8%a7%d9%84%d9%85%d8%b3%d9%84%d8%b3%d9%84%d8%
 
 RAMADAN_SERIES = (URL_MAIN + '/category/رمضان-2024/', 'showSeries')
 SERIE_EN = (URL_MAIN + '/category/%d8%a7%d9%84%d9%85%d8%b3%d9%84%d8%b3%d9%84%d8%a7%d8%aa/%d9%85%d8%b3%d9%84%d8%b3%d9%84%d8%a7%d8%aa-%d8%a7%d8%ac%d9%86%d8%a8%d9%8a%d8%a9/', 'showSeries')
-SERIE_AR = (URL_MAIN + '/category/%d8%a7%d9%84%d9%85%d8%b3%d9%84%d8%b3%d9%84%d8%a7%d8%aa/%d9%85%d8%b3%d9%84%d8%b3%d9%84%d8%a7%d8%aa-%d8%b9%d8%b1%d8%a8%d9%8a%d8%a9/', 'showSeries')
+SERIE_AR = (URL_MAIN + '/category/مسلسلات-عربية/', 'showSeries')
 ANIM_NEWS = (URL_MAIN + '/category/مسلسلات-انيميشن/', 'showSeries')
 
 DOC_NEWS = (URL_MAIN + '/?s=%D9%88%D8%AB%D8%A7%D8%A6%D9%82%D9%8A', 'showMovies')
@@ -127,91 +128,143 @@ def showSeriesSearch():
 		
 def showMovies(sSearch = ''):
     oGui = cGui()
+
+    # Determine the URL based on search or default value
     if sSearch:
-      sUrl = sSearch
+        sUrl = sSearch
     else:
+        # If no search term is provided, retrieve the URL from the parameter handler
         oInputParameterHandler = cInputParameterHandler()
         sUrl = oInputParameterHandler.getValue('siteUrl')
+      #  xbmcgui.Dialog().ok("Article Content", sUrl)
+    # Check if sUrl is available before proceeding
+    if sUrl:
+        oParser = cParser()
+        oRequest = cRequestHandler(sUrl)
+        oRequest.addHeaderEntry('User-Agent', UA)
+
+        # Fetch HTML content
+        sHtmlContent = oRequest.request()
+    #    xbmcgui.Dialog().ok("Article Content", sHtmlContent)
+        soup = BeautifulSoup(sHtmlContent, "html.parser")
+        articles_Content = soup.find_all("article")
+
+# Define the regex pattern
+        sPattern = r'<article aria-label="post">.*?<a href="(https?://[^"]+)">.*?<li aria-label="year">\s*(\d{4})\s*</li>.*?<li aria-label="title">\s*([^<]+)\s*<em>.*?</em>\s*</li>.*?<img[^>]+src="([^"]+)"'
+
+# Process each article
+        for article in articles_Content:
+    # Display article content for debugging
+      #   xbmcgui.Dialog().ok("Article", str(article))
+
+    # Find matches within the article content
+         aResult = re.findall(sPattern, str(article), re.DOTALL)
+         if aResult:
+          for aEntry in aResult:
+            # Extract URL and title
+            siteUrl = aEntry[0] + '/watching/'
+            sYear = aEntry[1]
+            sDesc = ''
+            sThumb = str(aEntry[3].encode('latin-1'),'utf-8')
+            sTitle = aEntry[2]
+           
+
+
+            # Clean up the title by removing unwanted words/phrases
+            sTitle = (
+                sTitle.replace("مشاهدة", "")
+                .replace("مسلسل", "")
+                .replace("مسرحية", "")
+                .replace("انمي", "")
+                .replace("مترجمة", "")
+                .replace("مترجم", "")
+                .replace("برنامج", "")
+                .replace("فيلم", "")
+                .replace("والأخيرة", "")
+                .replace("مدبلج للعربية", "مدبلج")
+                .replace("والاخيرة", "")
+                .replace("كاملة", "")
+                .replace("حلقات كاملة", "")
+                .replace("اونلاين", "")
+                .replace("مباشرة", "")
+                .replace("انتاج ", "")
+                .replace("جودة عالية", "")
+                .replace("كامل", "")
+                .replace("HD", "")
+                .replace("السلسلة الوثائقية", "")
+                .replace("الفيلم الوثائقي", "")
+                .replace("اون لاين", "")
+            )
+            oOutputParameterHandler = cOutputParameterHandler()  
+            oOutputParameterHandler.addParameter('siteUrl',siteUrl)
+            oOutputParameterHandler.addParameter('sMovieTitle', sTitle)
+            oOutputParameterHandler.addParameter('sThumb', sThumb)
+            oOutputParameterHandler.addParameter('sYear', sYear)
+            oOutputParameterHandler.addParameter('sDesc', sDesc)
+			
+            oGui.addMovie(SITE_IDENTIFIER, 'showServer', sTitle, '', sThumb, sDesc, oOutputParameterHandler)
+
+            
+              
+
+            # Display the cleaned title
+           # xbmcgui.Dialog().ok("Cleaned Title", sTitle)
+            pass
+        # Only proceed if HTML content is retrieved
+        if str (articles_Content):
+      #      xbmcgui.Dialog().ok("Article Content",str( articles_Content))
+            # Define and apply the regex pattern to find articles
+           
+
+          
+            xbmcgui.Dialog().ok("aResultt", str(aResult))
+
+            # Process the parsing results
+            if aResult:
+         #       for aEntry in aResult[1]:
+         #           siteUrl = aEntry[0] + '/watching/'
+                   
+         #           sTitle = aEntry[2].replace("مشاهدة","").replace("مسلسل","").replace("مسرحية","").replace("انمي","").replace("مترجمة","").replace("مترجم","").replace("برنامج","").replace("فيلم","").replace("والأخيرة","").replace("مدبلج للعربية","مدبلج").replace("والاخيرة","").replace("كاملة","").replace("حلقات كاملة","").replace("اونلاين","").replace("مباشرة","").replace("انتاج ","").replace("جودة عالية","").replace("كامل","").replace("HD","").replace("السلسلة الوثائقية","").replace("الفيلم الوثائقي","").replace("اون لاين","")
+           #         sTitle = str(sTitle.encode('latin-1'),'utf-8')
+  #                  xbmcgui.Dialog().ok("sTitle", sTitle)
+                      pass
+                   
+            else:
+                xbmcgui.Dialog().notification("Error", "No articles found", xbmcgui.NOTIFICATION_ERROR, 3000)
+        else:
+            xbmcgui.Dialog().notification("Error", "Failed to retrieve page content", xbmcgui.NOTIFICATION_ERROR, 3000)
+    else:
+        xbmcgui.Dialog().notification("Error", "No URL provided", xbmcgui.NOTIFICATION_ERROR, 3000)
+   
+   # sNextPage = __checkForNextPage(sHtmlContent)
+#        # xbmcgui.Dialog().ok("adrees",sNextPage )
+   #     if sNextPage:
+    oOutputParameterHandler = cOutputParameterHandler()
+    oOutputParameterHandler.addParameter('siteUrl', "")
+    oGui.addDir(SITE_IDENTIFIER, 'showMovies', '[COLOR teal]Next >>>[/COLOR]', icons + '/Next.png', oOutputParameterHandler)
+    oGui.setEndOfDirectory()
+ 
+
+
+
+   # if aResult[0]:
+     #  oOutputParameterHandler = cOutputParameterHandler()  
+   #    for aEntry in aResult[1]:
+ 
+      #              sTitle = aEntry[2].replace("مشاهدة","").replace("مسلسل","").replace("مسرحية","").replace("انمي","").replace("مترجمة","").replace("مترجم","").replace("برنامج","").replace("فيلم","").replace("والأخيرة","").replace("مدبلج للعربية","مدبلج").replace("والاخيرة","").replace("كاملة","").replace("حلقات كاملة","").replace("اونلاين","").replace("مباشرة","").replace("انتاج ","").replace("جودة عالية","").replace("كامل","").replace("HD","").replace("السلسلة الوثائقية","").replace("الفيلم الوثائقي","").replace("اون لاين","")
+        #            sTitle = str(sTitle.encode('latin-1'),'utf-8')
+       #             siteUrl = aEntry[0] + '/watching/'
+       #             sThumb = str(aEntry[3].encode('latin-1'),'utf-8')
+                    
+       #             if sThumb.startswith('//'):
+      #                  sThumb = 'http:' + sThumb
+    ''  """
+This is a multi-line comment.
+It’s not attached to any specific function or class,
+but it still won't be executed by Python.
+
       
-
-
-    oParser = cParser()
-    oRequest = cRequestHandler(sUrl)
-    oRequest.addHeaderEntry('User-Agent', UA)
-    data = oRequest.request()
-    
-
-     # (.+?) ([^<]+) .+?
-
-    if 'adilbo' in data:
-        t_script = re.findall('<script.*?;.*?\'(.*?);', data, re.S)
-        t_int = re.findall('/g.....(.*?)\)', data, re.S)
-        if t_script and t_int:
-            script = t_script[0].replace("'",'')
-            script = script.replace("+",'')
-            script = script.replace("\n",'')
-            sc = script.split('.')
-            page = ''
-            for elm in sc:
-                c_elm = base64.b64decode(elm+'==').decode('utf-8')
-                t_ch = re.findall('\d+', c_elm, re.S)
-                if t_ch:
-                    nb = int(t_ch[0])+int(t_int[0])
-                    page = page + chr(nb)
-
-            #VSlog(page)
-            sPattern = '<article aria-label="post"><a href="([^"]+).+?<li aria-label="year">(.+?)</li>.+?<li aria-label="title">([^<]+)<em>.+?data-src="(.+?)" width'
- 
-            sPattern = '<article aria-label="post"><a href="([^"]+).+?<li aria-label="year">(.+?)</li>.+?<li aria-label="title">([^<]+)<em>.+?data-src="(.+?)" width'
-
-
-            oParser = cParser()
-            aResult = oParser.parse(page, sPattern)
-            
-            # soup = BeautifulSoup(page,"html.parser") 
-            # #VSlog(soup)
-            # ContentSection = soup.find("section",{"aria-label":"posts"})
-            # Movies = ContentSection.findAll("article",{"aria-label":"post"})
-            # if Movies not in [None,""]:
-                # oOutputParameterHandler = cOutputParameterHandler()
-                
-                # for Movie in Movies:
-                    # siteUrl = Movie.find("a")['href'] + 'watching/'
-                    # VSlog(siteUrl)
-                    # sTitleOrg = Movie.find("li",{"aria-label":"title"}).text
-                    # sTitle = sTitleOrg.replace("مشاهدة","").replace("مسلسل","").replace("انمي","").replace("مترجمة","").replace("مترجم","").replace("برنامج","").replace("فيلم","").replace("والأخيرة","").replace("مدبلج للعربية","مدبلج").replace("والاخيرة","").replace("كاملة","").replace("حلقات كاملة","").replace("اونلاين","").replace("مباشرة","").replace("انتاج ","").replace("جودة عالية","").replace("كامل","").replace("HD","").replace("السلسلة الوثائقية","").replace("الفيلم الوثائقي","").replace("اون لاين","").strip()
-                    
-                    # VSlog(sTitle)
-                    # sThumb = Movie.find("img")['data-src']
-                    # if sThumb.startswith('//'):
-                            # sThumb = 'http:' + sThumb
-                    
-                    
-                    # VSlog(sThumb)
-                    # sYear = Movie.find("li",{"aria-label":"year"}).text
-                    # sDesc = ''
-                    
-                    
-                    # oOutputParameterHandler.addParameter('siteUrl',siteUrl)
-                    # oOutputParameterHandler.addParameter('sMovieTitle', sTitle)
-                    # oOutputParameterHandler.addParameter('sThumb', sThumb)
-                    # oOutputParameterHandler.addParameter('sYear', sYear)
-                    # oOutputParameterHandler.addParameter('sDesc', sDesc)
-            
-                    # oGui.addMovie(SITE_IDENTIFIER, 'showServer', sTitle, '', sThumb, sDesc, oOutputParameterHandler)
-
-            if aResult[0]:
-                oOutputParameterHandler = cOutputParameterHandler()  
-                for aEntry in aResult[1]:
- 
-                    sTitle = aEntry[2].replace("مشاهدة","").replace("مسلسل","").replace("مسرحية","").replace("انمي","").replace("مترجمة","").replace("مترجم","").replace("برنامج","").replace("فيلم","").replace("والأخيرة","").replace("مدبلج للعربية","مدبلج").replace("والاخيرة","").replace("كاملة","").replace("حلقات كاملة","").replace("اونلاين","").replace("مباشرة","").replace("انتاج ","").replace("جودة عالية","").replace("كامل","").replace("HD","").replace("السلسلة الوثائقية","").replace("الفيلم الوثائقي","").replace("اون لاين","")
-                    sTitle = str(sTitle.encode('latin-1'),'utf-8')
-                    siteUrl = aEntry[0] + '/watching/'
-                    sThumb = str(aEntry[3].encode('latin-1'),'utf-8')
-                    
-                    if sThumb.startswith('//'):
-                        sThumb = 'http:' + sThumb
-                    sYear = aEntry[1]
+        #            sYear = aEntry[1]
                     sDesc = ''
 
 
@@ -258,7 +311,7 @@ def showMovies(sSearch = ''):
                     oGui.addDir(SITE_IDENTIFIER, 'showMovies', sTitle, sThumb, oOutputParameterHandler)
 
         oGui.setEndOfDirectory()
- 
+"""
 def showSeries(sSearch = ''):
     oGui = cGui()
     if sSearch:

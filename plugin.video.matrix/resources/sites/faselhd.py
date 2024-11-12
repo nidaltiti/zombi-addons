@@ -3,24 +3,22 @@
 
 import re
 	
-import base64
 from resources.lib.gui.hoster import cHosterGui
 from resources.lib.gui.gui import cGui
+import xbmcgui
 from resources.lib.handler.inputParameterHandler import cInputParameterHandler
 from resources.lib.handler.outputParameterHandler import cOutputParameterHandler
 from resources.lib.handler.requestHandler import cRequestHandler
-from resources.lib.comaddon import VSlog, isMatrix, siteManager, addon
+from resources.lib.comaddon import progress, VSlog, isMatrix, siteManager, addon
 from resources.lib.parser import cParser
 from bs4 import BeautifulSoup
-from resources.lib import random_ua
 ADDON = addon()
 icons = ADDON.getSetting('defaultIcons')
 
 SITE_IDENTIFIER = 'faselhd'
 SITE_NAME = 'Faselhd'
 SITE_DESC = 'arabic vod'
-
-UA = random_ua.get_phone_ua()
+ 
 URL_MAIN = siteManager().getUrlMain(SITE_IDENTIFIER)
 
 MOVIE_EN = (URL_MAIN + '/movies', 'showMovies')
@@ -191,8 +189,13 @@ def showMovies(sSearch = ''):
     aResult = [True,matches]
 	
     if aResult[0]:
+        total = len(aResult[1])
+        progress_ = progress().VScreate(SITE_NAME)
         oOutputParameterHandler = cOutputParameterHandler() 
         for aEntry in aResult[1]:
+            progress_.VSupdate(progress_, total)
+            if progress_.iscanceled():
+                break
  
             
             sTitle = aEntry[1].replace("مشاهدة","").replace("مترجم","").replace("فيلم","").replace("مشاهدة","").replace("مسلسل","").replace("انمي","").replace("مترجمة","").replace("مترجم","").replace("فيلم","").replace("والأخيرة","").replace("مدبلج للعربية","مدبلج").replace("والاخيرة","").replace("كاملة","").replace("حلقات كاملة","").replace("اونلاين","").replace("مباشرة","").replace("انتاج ","").replace("جودة عالية","").replace("كامل","").replace("HD","").replace("السلسلة الوثائقية","").replace("الفيلم الوثائقي","").replace("اون لاين","").replace("برنامج","")
@@ -215,6 +218,7 @@ def showMovies(sSearch = ''):
 			
             oGui.addMovie(SITE_IDENTIFIER, 'showLink', sTitle, '', sThumb, sDesc, oOutputParameterHandler)
 
+        progress_.VSclose(progress_)
  
         sNextPage = __checkForNextPage(sHtmlContent)
         if sNextPage:
@@ -253,8 +257,13 @@ def showSeries(sSearch = ''):
 	
 	
     if aResult[0]:
+        total = len(aResult[1])
+        progress_ = progress().VScreate(SITE_NAME)
         oOutputParameterHandler = cOutputParameterHandler() 
         for aEntry in aResult[1]:
+            progress_.VSupdate(progress_, total)
+            if progress_.iscanceled():
+                break
  
             
             sTitle = aEntry[1].replace("مشاهدة","").replace("مسلسل","").replace("انمى","").replace("مترجم","").replace("فيلم","").replace("مشاهدة","").replace("مسلسل","").replace("انمي","").replace("مترجمة","").replace("مترجم","").replace("فيلم","").replace("والأخيرة","").replace("مدبلج للعربية","مدبلج").replace("والاخيرة","").replace("كاملة","").replace("حلقات كاملة","").replace("اونلاين","").replace("مباشرة","").replace("انتاج ","").replace("جودة عالية","").replace("كامل","").replace("HD","").replace("السلسلة الوثائقية","").replace("الفيلم الوثائقي","").replace("اون لاين","").replace("برنامج","")
@@ -274,6 +283,7 @@ def showSeries(sSearch = ''):
 			
             oGui.addTV(SITE_IDENTIFIER, 'showSeasons', sDisplayTitle, '', sThumb, sDesc, oOutputParameterHandler)
 
+        progress_.VSclose(progress_)
  
         sNextPage = __checkForNextPage(sHtmlContent)
         if sNextPage:
@@ -313,8 +323,13 @@ def showAnimes(sSearch = ''):
 	
 	
     if aResult[0]:
+        total = len(aResult[1])
+        progress_ = progress().VScreate(SITE_NAME)
         oOutputParameterHandler = cOutputParameterHandler() 
         for aEntry in aResult[1]:
+            progress_.VSupdate(progress_, total)
+            if progress_.iscanceled():
+                break
  
             sTitle = aEntry[1].replace("&#8217;","'").replace("مشاهدة","").replace("مترجم","").replace("فيلم","").replace("انمي","").replace("انمى","").replace("برنامج","")
             siteUrl = aEntry[0]
@@ -328,6 +343,8 @@ def showAnimes(sSearch = ''):
             oOutputParameterHandler.addParameter('sDesc', sDesc)
 			
             oGui.addTV(SITE_IDENTIFIER, 'showEpisodes1', sTitle, '', sThumb, sDesc, oOutputParameterHandler)
+
+        progress_.VSclose(progress_)
  
         sNextPage = __checkForNextPage(sHtmlContent)
         if sNextPage:
@@ -400,7 +417,7 @@ def showEpisodes():
     postdata = {'seasonID':postid}
     link = URL_MAIN + '/series-ajax/?_action=get_season_list&_post_id='+postid
     headers = {'Host': 'www.faselhd.ac',
-							'User-Agent': UA,
+							'User-Agent': 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.107 Mobile Safari/537.36',
 							'Referer': sUrl,
 							'origin': URL_MAIN}
     s = requests.Session() 	
@@ -521,78 +538,211 @@ def showEpisodes1():
 	
 def showLink():
     oGui = cGui()
+   
     oInputParameterHandler = cInputParameterHandler()
     sUrl = oInputParameterHandler.getValue('siteUrl')
     sMovieTitle = oInputParameterHandler.getValue('sMovieTitle')
     sThumb = oInputParameterHandler.getValue('sThumb')
 
-    oParser = cParser()    
     oRequestHandler = cRequestHandler(sUrl)
     sHtmlContent = oRequestHandler.request()
+    
+    oParser = cParser()
+    
+    #Recuperation infos
+    sNote = ''
 
-    sPattern = 'player_iframe.location.href = ["\']([^"\']+)["\']'
-    aResult = oParser.parse(sHtmlContent, sPattern)	
+    sPattern = '<div class="singleDesc">.+?<p>([^<]+)</p>'
+    aResult = oParser.parse(sHtmlContent, sPattern)
+    
+    if (aResult[0]):
+        sNote = aResult[1][0]
+        xbmcgui.Dialog().ok("text",str(sNote))   
+			
+     # (.+?) ([^<]+) .+?
+    sPattern = 'onclick="player_iframe.location.href = ([^<]+)"><a.+?href="javascript:;"><i.+?class="fa fa-play-circle"></i>([^<]+)</a></li>'
+
+
+    oParser = cParser()
+    aResult = oParser.parse(sHtmlContent, sPattern)
+    #VSlog("Link Pattern :" +sPattern)
+    #VSlog(aResult)
+   
+    if aResult[0]:
+        oOutputParameterHandler = cOutputParameterHandler()    
+        for aEntry in aResult[1]:
+ 
+            if "01#" not in aEntry[1]:
+                continue
+ 
+            sTitle = aEntry[1].replace("&#8217;", "'") 
+            siteUrl = aEntry[0].replace("'", "") 
+
+
+ 
+
+            oOutputParameterHandler.addParameter('siteUrl', siteUrl)
+            oOutputParameterHandler.addParameter('sMovieTitle', sMovieTitle)
+            oOutputParameterHandler.addParameter('sThumb', sThumb)
+
+            
+
+ 
+            oGui.addLink(SITE_IDENTIFIER, 'showHosters', sTitle, sThumb, sNote, oOutputParameterHandler)
+
+    # (.+?)
+
+    sPattern = 'onclick="player_iframe.location.href = ([^<]+)">'
+    oParser = cParser()
+    aResult = oParser.parse(sHtmlContent, sPattern)
+    #VSlog("Link Pattern :" +sPattern)
+    #VSlog(aResult)
+	
     if aResult[0]:
         for aEntry in aResult[1]:
+ 
+            if "embed.php?url=" in aEntry:
+               continue
             
-            oRequest = cRequestHandler(aEntry)
-            oRequest.addHeaderEntry('user-agent',UA)
-            oRequest.addHeaderEntry('referer',URL_MAIN)
-            data = oRequest.request()
-            if 'adilbo' in data:
-                data = decode_page(data)
+            url = aEntry.replace("'", "")
+          
+            if url.startswith('//'):
+               url = 'http:' + url
             
-            sPattern =  'data-url="([^<]+)">([^<]+)</button>' 
-            aResult = oParser.parse(data, sPattern)
-            if aResult[0]:
-                for aEntry in aResult[1]:
-                    sHosterUrl = aEntry[0]
-                    sHost = aEntry[1].upper()
-                    sTitle = ('%s  (%s)') % (sMovieTitle, sHost)  
-                    oHoster = cHosterGui().getHoster('faselhd') 
-                    if oHoster:
-                        oHoster.setDisplayName(sTitle)
-                        oHoster.setFileName(sMovieTitle)
-                        cHosterGui().showHoster(oGui, oHoster, sHosterUrl, sThumb)            
-
-            sPattern =  'videoSrc = ["\']([^"\']+)["\']' 
-            aResult = oParser.parse(data, sPattern)
-            if aResult[0]:
-                for aEntry in aResult[1]:
-                    sHosterUrl = aEntry
-                    sHost = 'Server 2'
-                    sTitle = ('%s  (%s)') % (sMovieTitle, sHost)  
-                    oHoster = cHosterGui().getHoster('faselhd') 
-                    if oHoster:
-                        oHoster.setDisplayName(sTitle)
-                        oHoster.setFileName(sMovieTitle)
-                        cHosterGui().showHoster(oGui, oHoster, sHosterUrl, sThumb)    
+            sHosterUrl = url
+            oHoster = cHosterGui().checkHoster(sHosterUrl)
+            xbmcgui.Dialog().ok("text",str(sHosterUrl))  
+            if oHoster:
+               oHoster.setDisplayName(sMovieTitle)
+               oHoster.setFileName(sMovieTitle)
+               cHosterGui().showHoster(oGui, oHoster, sHosterUrl, sThumb)
+				
 
     oGui.setEndOfDirectory()       
   
 def __checkForNextPage(sHtmlContent):
+    sPattern = "<li class=\"page-item disabled active\"><span class=\"page-link\">(.+?)</span>"
+	
     oParser = cParser()
-    sPattern = "href='([^']+)'>&rsaquo;</a>"
-    aResult = oParser.parse(sHtmlContent, sPattern) 
+    aResult = oParser.parse(sHtmlContent, sPattern)
+ 
     if aResult[0]:
-        return aResult[1][0]
+        currentPage = aResult[1][0]
+        #VSlog('currentPage : ' + currentPage)
+        AllPagesPattern = '<li class=\"page-item\"><a class=\"page-link\" href=\"(.+?)\">(.+?)</a></li>'
+        oParser = cParser()
+        aResult = oParser.parse(sHtmlContent, AllPagesPattern)
+        #VSlog(aResult)
+        if aResult[0]:
+            for res in aResult[1]:
+                #VSlog('PAGE : ' + str(res))
+                if res[1] > currentPage or res[1] == '›':
+                    return res[0]
+    else:
+        return aResult[0]
+import xbmcgui
+def showHosters():
+    oGui = cGui()
+    oInputParameterHandler = cInputParameterHandler()
+    sUrl = oInputParameterHandler.getValue('siteUrl')
+    sMovieTitle = oInputParameterHandler.getValue('sMovieTitle')
+    sThumb = oInputParameterHandler.getValue('sThumb')
+    
+    oRequestHandler = cRequestHandler(sUrl)
+    sHtmlContent = oRequestHandler.request();
+    # (.+?)
+ 
 
-    return False
+    sPattern = 'name="iframe" src="([^<]+)" frameborde'
+    oParser = cParser()
+    aResult = oParser.parse(sHtmlContent, sPattern)
 
-def decode_page(data):
-    t_script = re.findall('<script.*?;.*?\'(.*?);', data, re.S)
-    t_int = re.findall('/g.....(.*?)\)', data, re.S)
-    if t_script and t_int:
-        script = t_script[2].replace("'",'')
-        script = script.replace("+",'')
-        script = script.replace("\n",'')
-        sc = script.split('.')
-        page = ''
-        for elm in sc:
-            c_elm = base64.b64decode(elm+'==').decode()
-            t_ch = re.findall('\d+', c_elm, re.S)
-            if t_ch:
-                nb = int(t_ch[0])+int(t_int[1])
-                page = page + chr(nb)
+	
+    if aResult[0]:
+        for aEntry in aResult[1]:
+            xbmcgui.Dialog().ok("host",aEntry)
+            url = aEntry
+            sTitle = " " 
+            if url.startswith('//'):
+               url = 'http:' + url
+            
+            sHosterUrl = url 
+          
+            oHoster = cHosterGui().checkHoster(sHosterUrl)
+            if oHoster:
+               sDisplayTitle = sMovieTitle+sTitle
+               oHoster.setDisplayName(sDisplayTitle)
+               oHoster.setFileName(sMovieTitle)
+               cHosterGui().showHoster(oGui, oHoster, sHosterUrl, sThumb)
+				
+               
+        
+    sPattern = 'file: "(.+?)",type: "hls",'
+    oParser = cParser()
+    aResult = oParser.parse(sHtmlContent, sPattern)
 
-    return page
+	
+    if aResult[0]:
+        for aEntry in aResult[1]:
+            
+            url = aEntry
+            sTitle = " " 
+            if url.startswith('//'):
+               url = 'http:' + url
+            
+            sHosterUrl = url
+            xbmcgui.Dialog().ok("",sHosterUrl)
+            oHoster = cHosterGui().checkHoster(sHosterUrl)
+            if oHoster:
+               sDisplayTitle = sMovieTitle+sTitle
+               oHoster.setDisplayName(sDisplayTitle)
+               oHoster.setFileName(sMovieTitle)
+               cHosterGui().showHoster(oGui, oHoster, sHosterUrl, sThumb)
+				
+               
+        
+    sPattern = 'file: "(.+?)",.+?"type": "hls",'
+    oParser = cParser()
+    aResult = oParser.parse(sHtmlContent, sPattern)
+
+	
+    if aResult[0]:
+        for aEntry in aResult[1]:
+            
+            url = aEntry
+            sTitle = " "
+            if url.startswith('//'):
+               url = 'http:' + url
+            
+            sHosterUrl = url
+            oHoster = cHosterGui().checkHoster(sHosterUrl)
+            if oHoster:
+                sDisplayTitle = sMovieTitle+sTitle
+                oHoster.setDisplayName(sDisplayTitle)
+                oHoster.setFileName(sMovieTitle)
+                cHosterGui().showHoster(oGui, oHoster, sHosterUrl, sThumb)
+				                        
+    sPattern = '<a href="(.+?)" class="download-btn" '
+    oParser = cParser()
+    aResult = oParser.parse(sHtmlContent, sPattern)
+
+	
+    if aResult[0]:
+        for aEntry in aResult[1]:
+            
+            url = aEntry
+            sTitle = " " 
+            if url.startswith('//'):
+               url = 'http:' + url
+            
+            sHosterUrl = url
+            oHoster = cHosterGui().checkHoster(sHosterUrl)
+            if oHoster:
+               sDisplayTitle = sMovieTitle+sTitle
+               oHoster.setDisplayName(sDisplayTitle)
+               oHoster.setFileName(sMovieTitle)
+               cHosterGui().showHoster(oGui, oHoster, sHosterUrl, sThumb)
+				
+
+                
+    oGui.setEndOfDirectory()
