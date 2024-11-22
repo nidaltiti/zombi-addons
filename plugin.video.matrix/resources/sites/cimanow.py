@@ -202,31 +202,14 @@ def showMovies(sSearch = ''):
             oOutputParameterHandler.addParameter('sYear', sYear)
             oOutputParameterHandler.addParameter('sDesc', sDesc)
 			
-            oGui.addMovie(SITE_IDENTIFIER, 'showServer', sTitle, '', sThumb, sDesc, oOutputParameterHandler)
+            oGui.addMovie(SITE_IDENTIFIER, 'showServer', sTitle, '', sThumb, sDesc, oOutputParameterHandler)  
 
-            
-              
-
-            # Display the cleaned title
-           # xbmcgui.Dialog().ok("Cleaned Title", sTitle)
             pass
         # Only proceed if HTML content is retrieved
         if str (articles_Content):
-      #      xbmcgui.Dialog().ok("Article Content",str( articles_Content))
-            # Define and apply the regex pattern to find articles
-           
 
-          
-            xbmcgui.Dialog().ok("aResultt", str(aResult))
-
-            # Process the parsing results
             if aResult:
-         #       for aEntry in aResult[1]:
-         #           siteUrl = aEntry[0] + '/watching/'
-                   
-         #           sTitle = aEntry[2].replace("مشاهدة","").replace("مسلسل","").replace("مسرحية","").replace("انمي","").replace("مترجمة","").replace("مترجم","").replace("برنامج","").replace("فيلم","").replace("والأخيرة","").replace("مدبلج للعربية","مدبلج").replace("والاخيرة","").replace("كاملة","").replace("حلقات كاملة","").replace("اونلاين","").replace("مباشرة","").replace("انتاج ","").replace("جودة عالية","").replace("كامل","").replace("HD","").replace("السلسلة الوثائقية","").replace("الفيلم الوثائقي","").replace("اون لاين","")
-           #         sTitle = str(sTitle.encode('latin-1'),'utf-8')
-  #                  xbmcgui.Dialog().ok("sTitle", sTitle)
+       
                       pass
                    
             else:
@@ -236,93 +219,137 @@ def showMovies(sSearch = ''):
     else:
         xbmcgui.Dialog().notification("Error", "No URL provided", xbmcgui.NOTIFICATION_ERROR, 3000)
    
-   # sNextPage = __checkForNextPage(sHtmlContent)
-#        # xbmcgui.Dialog().ok("adrees",sNextPage )
-   #     if sNextPage:
-    oOutputParameterHandler = cOutputParameterHandler()
-    oOutputParameterHandler.addParameter('siteUrl', "")
-    oGui.addDir(SITE_IDENTIFIER, 'showMovies', '[COLOR teal]Next >>>[/COLOR]', icons + '/Next.png', oOutputParameterHandler)
+    sNextPage = __checkForNextPage(sHtmlContent)
+    #xbmcgui.Dialog().ok("Next page",str (sNextPage) )
+    if sNextPage:
+     oOutputParameterHandler = cOutputParameterHandler()
+     oOutputParameterHandler.addParameter('siteUrl', sNextPage)
+     oGui.addDir(SITE_IDENTIFIER, 'showMovies', '[COLOR teal]Next >>>[/COLOR]', icons + '/Next.png', oOutputParameterHandler)
     oGui.setEndOfDirectory()
- 
+   # Function ends def showMovies(sSearch = ''): 
+   
+def __checkForNextPage(sHtmlContent): #Check if the next page exists.
+    soup=BeautifulSoup(sHtmlContent,"html.parser")
+    pagination = soup.find_all("ul", {"aria-label": "pagination"})
+    sPattern = r'<li class="active"><a href="(https?://[^"]+)">([^<]+)</a></li>'
+   
+    next_page = ""
+    for page in pagination:
+        page_str = str(page) 
+    matches = re.findall(sPattern, page_str)
+   
+# Print the matches
+    for match in matches:
+  #   href = match[0]
+     number = int (match[1])+1
+     next_page=(f"{str(number)}")
+     
+   #  xbmcgui.Dialog().ok("next",next_page)
+    sPattern =  r'<li\s*.*?><a href="(https?://[^"]+)">([^<]+)</a></li>'
+    for page in pagination :
+        page_str=str(page)
+        matches_NextPage = re.findall(sPattern, page_str)
+        for match in matches_NextPage:
+           number=str (match[1])
+
+           if str (next_page) ==   str(number) :
+     #       xbmcgui.Dialog().ok("",  str(number))
+            results=match[0]
 
 
+            return results # Join results into a single string separated by newlines
+    
+    return  False
+    pass
+#End __checkForNextPage(sHtmlContent):
 
-   # if aResult[0]:
-     #  oOutputParameterHandler = cOutputParameterHandler()  
-   #    for aEntry in aResult[1]:
- 
-      #              sTitle = aEntry[2].replace("مشاهدة","").replace("مسلسل","").replace("مسرحية","").replace("انمي","").replace("مترجمة","").replace("مترجم","").replace("برنامج","").replace("فيلم","").replace("والأخيرة","").replace("مدبلج للعربية","مدبلج").replace("والاخيرة","").replace("كاملة","").replace("حلقات كاملة","").replace("اونلاين","").replace("مباشرة","").replace("انتاج ","").replace("جودة عالية","").replace("كامل","").replace("HD","").replace("السلسلة الوثائقية","").replace("الفيلم الوثائقي","").replace("اون لاين","")
-        #            sTitle = str(sTitle.encode('latin-1'),'utf-8')
-       #             siteUrl = aEntry[0] + '/watching/'
-       #             sThumb = str(aEntry[3].encode('latin-1'),'utf-8')
-                    
-       #             if sThumb.startswith('//'):
-      #                  sThumb = 'http:' + sThumb
-    ''  """
-This is a multi-line comment.
-It’s not attached to any specific function or class,
-but it still won't be executed by Python.
-
-      
-        #            sYear = aEntry[1]
-                    sDesc = ''
-
-
-                    oOutputParameterHandler.addParameter('siteUrl',siteUrl)
-                    oOutputParameterHandler.addParameter('sMovieTitle', sTitle)
-                    oOutputParameterHandler.addParameter('sThumb', sThumb)
-                    oOutputParameterHandler.addParameter('sYear', sYear)
-                    oOutputParameterHandler.addParameter('sDesc', sDesc)
-			
-                    oGui.addMovie(SITE_IDENTIFIER, 'showServer', sTitle, '', sThumb, sDesc, oOutputParameterHandler)
-
-            
-
-    if not sSearch:
-        sStart = '</section>'
-        sEnd = '</ul>'
-        page = oParser.abParse(page, sStart, sEnd)
-
-        sPattern = '<li><a href="(.+?)">(.+?)</a>'
-        oParser = cParser()
-        aResult = oParser.parse(page, sPattern)
-        
-        soup = BeautifulSoup(page,"html.parser")
-        CurrentPage = int(soup.find("li",{"class":"active"}).text)
-        #VSlog(CurrentPage)
-        
-        if aResult[0]:
-            oOutputParameterHandler = cOutputParameterHandler()  
-            for aEntry in aResult[1]:
-                
-                deviation = int(aEntry[1])-CurrentPage
-                if deviation==1:
-                    #sTitle = aEntry[1]
-            
-                    sTitle =  'Next'
-                    #sTitle =   '[COLOR red]'+sTitle+'[/COLOR]'
-                    siteUrl = aEntry[0]
-                    sThumb = icons + '/Next.png'
-
-                    oOutputParameterHandler.addParameter('siteUrl',siteUrl)
-                    oOutputParameterHandler.addParameter('sMovieTitle', sTitle)
-                    oOutputParameterHandler.addParameter('sThumb', sThumb)
-            
-                    oGui.addDir(SITE_IDENTIFIER, 'showMovies', sTitle, sThumb, oOutputParameterHandler)
-
-        oGui.setEndOfDirectory()
-"""
 def showSeries(sSearch = ''):
     oGui = cGui()
     if sSearch:
       sUrl = sSearch
     else:
+          oInputParameterHandler = cInputParameterHandler()
+          sUrl = oInputParameterHandler.getValue('siteUrl')
+      #  xbmcgui.Dialog().ok("Article Content", sUrl)
+    # Check if sUrl is available before proceeding
+    if sUrl:
+        oParser = cParser()
+        oRequest = cRequestHandler(sUrl)
+        oRequest.addHeaderEntry('User-Agent', UA)
+
+        # Fetch HTML content
+        sHtmlContent = oRequest.request()
+    #    xbmcgui.Dialog().ok("Article Content", sHtmlContent)
+        soup = BeautifulSoup(sHtmlContent, "html.parser")
+        articles_Content = soup.find_all("article")
+
+# Define the regex pattern
+        sPattern = r'<article aria-label="post">.*?<a href="(https?://[^"]+)">.*?<li aria-label="year">\s*(\d{4})\s*</li>.*?<li aria-label="title">\s*([^<]+)\s*<em>.*?</em>\s*</li>.*?<img[^>]+src="([^"]+)"'
+
+# Process each article
+        for article in articles_Content:
+           aResult = re.findall(sPattern, str(article), re.DOTALL)
+       #    xbmcgui.Dialog().ok("aResult",str(aResult))
+           if aResult:
+                for aEntry in aResult:
+            # Extract URL and title
+                 siteUrl = aEntry[0] 
+                 sYear = aEntry[1]
+                 sDesc = ''
+                 sThumb = str(aEntry[3].encode('latin-1'),'utf-8')
+                 sTitle = aEntry[2]
+                 sTitle = (
+                sTitle.replace("مشاهدة", "")
+                .replace("مسلسل", "")
+                .replace("مسرحية", "")
+                .replace("انمي", "")
+                .replace("مترجمة", "")
+                .replace("مترجم", "")
+                .replace("برنامج", "")
+                .replace("فيلم", "")
+                .replace("والأخيرة", "")
+                .replace("مدبلج للعربية", "مدبلج")
+                .replace("والاخيرة", "")
+                .replace("كاملة", "")
+                .replace("حلقات كاملة", "")
+                .replace("اونلاين", "")
+                .replace("مباشرة", "")
+                .replace("انتاج ", "")
+                .replace("جودة عالية", "")
+                .replace("كامل", "")
+                .replace("HD", "")
+                .replace("السلسلة الوثائقية", "")
+                .replace("الفيلم الوثائقي", "")
+                .replace("اون لاين", "")
+            )
+
+           #      xbmcgui.Dialog().ok("Title",str(sTitle))
+                 oOutputParameterHandler = cOutputParameterHandler()  
+                 oOutputParameterHandler.addParameter('siteUrl',siteUrl)
+                 oOutputParameterHandler.addParameter('sMovieTitle', sTitle)
+                 oOutputParameterHandler.addParameter('sThumb', sThumb)
+                 oOutputParameterHandler.addParameter('sYear', sYear)
+                 oOutputParameterHandler.addParameter('sDesc', sDesc)
+                 oGui.addTV(SITE_IDENTIFIER, 'showSeasons', sTitle, '', sThumb, sDesc, oOutputParameterHandler)
+                 pass # for aEntry in aResult:
+        pass#  for article in articles_Content:
+        sNextPage = __checkForNextPage(sHtmlContent)
+    #xbmcgui.Dialog().ok("Next page",str (sNextPage) )
+    if sNextPage:
+     oOutputParameterHandler = cOutputParameterHandler()
+     oOutputParameterHandler.addParameter('siteUrl', sNextPage)
+     oGui.addDir(SITE_IDENTIFIER, 'showSeries', '[COLOR teal]Next >>>[/COLOR]', icons + '/Next.png', oOutputParameterHandler)
+    oGui.setEndOfDirectory()
+       # sPattern = r'<article aria-label="post">.*?<a href="(https?://[^"]+)">.*?<li aria-label="year">\s*(\d{4})\s*</li>.*?<li aria-label="title">\s*([^<]+)\s*<em>.*?</em>\s*</li>.*?<img[^>]+src="([^"]+)"'
+    '''''
         oInputParameterHandler = cInputParameterHandler()
         sUrl = oInputParameterHandler.getValue('siteUrl')
  
     oRequest = cRequestHandler(sUrl)
     oRequest.addHeaderEntry('User-Agent', UA)
     data = oRequest.request()
+ 
+  
 
 
      # (.+?) ([^<]+) .+?
@@ -439,7 +466,8 @@ def showSeries(sSearch = ''):
                     oOutputParameterHandler.addParameter('sThumb', sThumb)
             
                     oGui.addDir(SITE_IDENTIFIER, 'showMovies', sTitle, sThumb, oOutputParameterHandler)
-        oGui.setEndOfDirectory()
+                    '''''
+        
  
 def showSeasons():
     oGui = cGui()
@@ -611,11 +639,81 @@ def showServer():
 
     oRequest = cRequestHandler(sUrl)
     data = oRequest.request()
+  #  xbmcgui.Dialog().ok("showServer",data)
 
+    soup=BeautifulSoup(data,"html.parser") 
+    html = soup.find_all("li", class_="active")
+    
+    # Display the result in Kodi's dialog
+   # xbmcgui.Dialog().ok("showServer", str(html))
+    
+    # Regular expression pattern to find <li> with specific data-index and data-id
+    sPattern = r'<li\b[^>]*>(.*?)</li>'
+    
+    # Convert html content to a string for regex search
+    html_str = str(html)
+    
+    # Use re.findall with the correct parameter order
+    aResult = re.findall(sPattern, html_str, re.DOTALL)
 
+    
+    # Display the result in Kodi's dialog
+   # xbmcgui.Dialog().ok("showServer2", str(aResult[1]))
      # (.+?) ([^<]+) .+?
 
-    if 'adilbo' in data:
+    if aResult:
+            iframe = soup.find_all("iframe")
+            iframe_str = str(iframe)
+
+         #   xbmcgui.Dialog().ok("iframe", iframe_str)
+            sPattern = r'<iframe[^>]+src="([^"]+)"'
+            ifram_src = re.findall(sPattern, iframe_str, re.DOTALL)
+            sHosterUrl =f' https:{str(ifram_src[0])}'
+         #   xbmcgui.Dialog().ok("src", str(   sHosterUrl ))
+            oHoster = cHosterGui().checkHoster(sHosterUrl)
+            sTitle=sMovieTitle
+            if oHoster:
+             oHoster.setDisplayName(sTitle)
+             oHoster.setFileName(sMovieTitle)
+            cHosterGui().showHoster(oGui, oHoster, sHosterUrl, sThumb) 
+            pass
+            soup=BeautifulSoup(data,"html.parser") 
+            html = soup.find_all("li", attrs={"aria-label": "download"})
+
+    
+    # Display the result in Kodi's dialog
+           
+    
+    # Regular expression pattern to find <li> with specific data-index and data-id
+            sPattern = r'<a href="(https?://[^"]+)"[^>]*>\s*<i[^>]*>\s*</i>\s*Filemoon\s*</a>'
+
+    
+    # Convert html content to a string for regex search
+            html_str = str(html)
+    
+    # Use re.findall with the correct parameter order
+            aResult = re.search(sPattern, html_str, re.DOTALL)
+          
+            if aResult :
+              
+                Filemoon_link=  aResult.group(1).replace("/d/","/e/")
+                _requests=requests.get(Filemoon_link)
+                soup=BeautifulSoup(_requests.text,"html.parser") 
+                selectElE = soup.find_all("div", attrs={"class": "specific-class"})
+                xbmcgui.Dialog().ok("selectElE", str(selectElE))
+                sHosterUrl =Filemoon_link
+                
+                oHoster = cHosterGui().checkHoster(sHosterUrl)
+                sTitle=sMovieTitle
+                if oHoster:
+                 oHoster.setDisplayName(sTitle)
+                oHoster.setFileName(sMovieTitle)
+                cHosterGui().showHoster(oGui, oHoster, sHosterUrl, sThumb) 
+                pass
+
+    
+    
+            """
         t_script = re.findall('<script.*?;.*?\'(.*?);', data, re.S)
         t_int = re.findall('/g.....(.*?)\)', data, re.S)
         if t_script and t_int:
@@ -631,15 +729,19 @@ def showServer():
                     nb = int(t_ch[0])+int(t_int[0])
                     page = page + chr(nb)
 
-
+              """
     # (.+?) .+? ([^<]+)        	
-            sPattern = '<a href="([^"]+)"><i class.+?download.+?</i>(.+?)<p'
-            oParser = cParser()
-            aResult = oParser.parse(page, sPattern)
+         
+                               
+         #   sPattern =  r'<ul\s+class="[^"]*\btabcontent\b[^"]*\bactive\b[^"]*"\s+id="watch">'
+      #      oParser = cParser()
+      #      aResult = oParser.parse(page, sPattern)
+       #     xbmcgui.Dialog().ok("showServer",data)
 
-	
-            if aResult[0]:
-                for aEntry in aResult[1]:
+
+    '''''
+            if html:
+                for aEntry in html:
             
                     url = aEntry[0]
                     sTitle = aEntry[1].replace('</i>',"")
@@ -785,5 +887,7 @@ def showServer():
                                         cHosterGui().showHoster(oGui, oHoster, sHosterUrl, sThumb)
 
 
-                
+                           '''''
     oGui.setEndOfDirectory()
+
+#print("hi")

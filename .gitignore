@@ -1,10 +1,11 @@
+# Ignore compiled Python files
+*.pyc
 *.pyo
-plugin.video.matrix/resources/hosters/lien_direct.py
-plugin.video.matrix/resources/lib/gui/guiElement.py
-plugin.video.matrix/resources/hosters/vidbom.py
-plugin.video.matrix/resources/hosters/vidbom.py
-*.pyc
-*.pyc
-*.pyc
 
-   plugin.video.matrix-6.4.5.zip
+# Ignore specific plugin files
+plugin.video.matrix/resources/hosters/lien_direct.py
+plugin.video.matrix/resources/hosters/vidbom.py
+plugin.video.matrix/resources/lib/gui/guiElement.py
+
+# Ignore specific zip files
+plugin.video.matrix-6.4.5.zip
