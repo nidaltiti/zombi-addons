@@ -127,12 +127,15 @@ def showSeriesSearch():
         return
 		
 def showMovies(sSearch = ''):
+    IsOpenDirectory=False
     oGui = cGui()
 
     # Determine the URL based on search or default value
     if sSearch:
         sUrl = sSearch
+        IsOpenDirectory=False
     else:
+        IsOpenDirectory=True
         # If no search term is provided, retrieve the URL from the parameter handler
         oInputParameterHandler = cInputParameterHandler()
         sUrl = oInputParameterHandler.getValue('siteUrl')
@@ -225,7 +228,8 @@ def showMovies(sSearch = ''):
      oOutputParameterHandler = cOutputParameterHandler()
      oOutputParameterHandler.addParameter('siteUrl', sNextPage)
      oGui.addDir(SITE_IDENTIFIER, 'showMovies', '[COLOR teal]Next >>>[/COLOR]', icons + '/Next.png', oOutputParameterHandler)
-    oGui.setEndOfDirectory()
+    if  IsOpenDirectory:
+     oGui.setEndOfDirectory()
    # Function ends def showMovies(sSearch = ''): 
    
 def __checkForNextPage(sHtmlContent): #Check if the next page exists.
@@ -264,10 +268,13 @@ def __checkForNextPage(sHtmlContent): #Check if the next page exists.
 #End __checkForNextPage(sHtmlContent):
 
 def showSeries(sSearch = ''):
+    IsOpenDirectory=False
     oGui = cGui()
     if sSearch:
       sUrl = sSearch
+      IsOpenDirectory=False
     else:
+          IsOpenDirectory=True
           oInputParameterHandler = cInputParameterHandler()
           sUrl = oInputParameterHandler.getValue('siteUrl')
       #  xbmcgui.Dialog().ok("Article Content", sUrl)
@@ -339,7 +346,8 @@ def showSeries(sSearch = ''):
      oOutputParameterHandler = cOutputParameterHandler()
      oOutputParameterHandler.addParameter('siteUrl', sNextPage)
      oGui.addDir(SITE_IDENTIFIER, 'showSeries', '[COLOR teal]Next >>>[/COLOR]', icons + '/Next.png', oOutputParameterHandler)
-    oGui.setEndOfDirectory()
+     if IsOpenDirectory:
+      oGui.setEndOfDirectory()
        # sPattern = r'<article aria-label="post">.*?<a href="(https?://[^"]+)">.*?<li aria-label="year">\s*(\d{4})\s*</li>.*?<li aria-label="title">\s*([^<]+)\s*<em>.*?</em>\s*</li>.*?<img[^>]+src="([^"]+)"'
     '''''
         oInputParameterHandler = cInputParameterHandler()
@@ -480,17 +488,33 @@ def showSeasons():
     # (.+?) .+?  ([^<]+)
     oRequestHandler = cRequestHandler(sUrl)
     sHtmlContent = oRequestHandler.request()
+
+
+
+
     oParser = cParser()
     sStart = '<section aria-label="seasons">'
-    sEnd = '<ul class="tabcontent" id="related">'
+    sEnd = '</section>'
     sHtmlContent = oParser.abParse(sHtmlContent, sStart, sEnd)
-
+  #  xbmcgui.Dialog().ok("showSeasons",str (sHtmlContent))
     oRequest = cRequestHandler(sUrl)
     oRequest.addHeaderEntry('User-Agent', UA)
     data = oRequest.request()
+    spattern = r'<a href="([^"]+)">'
+
+# Find all matches
+    aResult = re.findall(spattern, sHtmlContent)
+  #  xbmcgui.Dialog().ok("links",str (aResult))
+    
+
+  
+  
+  
+    '''''
     
 
      # (.+?) ([^<]+) .+?
+  
 
     if 'adilbo' in data:
         t_script = re.findall('<script.*?;.*?\'(.*?);', data, re.S)
@@ -518,16 +542,17 @@ def showSeasons():
     
             oParser = cParser()
             aResult = oParser.parse(page, sPattern)
-    
-   
-            if aResult[0]:
+         '''
+    if aResult:
                 oOutputParameterHandler = cOutputParameterHandler()  
-                for aEntry in aResult[1]:
+                for num,aEntry in enumerate (aResult):
+                    snum=int(num+1)
 
-                    sSeason = str(aEntry[1].encode('latin-1'),'utf-8')
+
+                    sSeason =f"S{snum}"
                     sTitle = sMovieTitle+sSeason.replace("الموسم"," S").replace("S ","S")
-                    
-                    siteUrl = aEntry[0]
+                  #  xbmcgui.Dialog().ok("links",str (aEntry))
+                    siteUrl = aEntry
                     sThumb = sThumb
                     sDesc = ""
  
@@ -544,19 +569,79 @@ def showSeasons():
  
 def showEps():
     oGui = cGui()
-   
+  
     oInputParameterHandler = cInputParameterHandler()
     sUrl = oInputParameterHandler.getValue('siteUrl')
+ #   xbmcgui.Dialog().ok("sHtmlContent",str (sUrl))
     sMovieTitle = oInputParameterHandler.getValue('sMovieTitle')
     sThumb = oInputParameterHandler.getValue('sThumb')
 
     oRequestHandler = cRequestHandler(sUrl)
     sHtmlContent = oRequestHandler.request()
+  #  xbmcgui.Dialog().ok("sHtmlContent",str (sHtmlContent))
+    soup=BeautifulSoup(sHtmlContent,"html.parser")
+    ul_eps = soup.find_all("ul", class_="tabcontent active")#<ul class="tabcontent active" id="eps">
+    ul_content=str(ul_eps)
+    tag_conten_il=  BeautifulSoup(ul_content,"html.parser")
+    il_tags= tag_conten_il.find_all("li")
+    sPattern = r'<a href="([^"]+)"[^>]*>.*?<img[^>]*src="([^"]+)"[^>]*>.*?<em>(\d+)</em>'
+
+
+ 
+    for il_tag in  il_tags:
+#     xbmcgui.Dialog().ok("sHtmlContent",str (il_tag))
+      block = str(il_tag)
+
+    # Perform regex search on the block
+      aResult = re.findall(sPattern, block, re.DOTALL)
+
+   
+     
+      for aEntry in aResult:  
+       oOutputParameterHandler = cOutputParameterHandler()  
+       siteUrl = aEntry[0]+'/watching/'
+       sThumb = aEntry[1]
+       sTitle = sMovieTitle+' E'+aEntry[2]
+       sDesc = ""
+       oOutputParameterHandler.addParameter('siteUrl', siteUrl)
+       oOutputParameterHandler.addParameter('sMovieTitle', sTitle)
+       oOutputParameterHandler.addParameter('sThumb', sThumb)
+      # xbmcgui.Dialog().ok("Extracted aEntry",str (siteUrl))
+     
+       oGui.addEpisode(SITE_IDENTIFIER, 'showServer', sTitle, '', sThumb, sDesc, oOutputParameterHandler)
+            
+   
+    # Display the result for each <li>
+    '''''
+      if aResult:
+              
+                oOutputParameterHandler = cOutputParameterHandler()  
+                for aEntry in aResult:
+                    xbmcgui.Dialog().ok("Extracted Data",str (aEntry))
+
+ 
+                    sTitle = sMovieTitle+' E'+aEntry[2]
+                    
+                    siteUrl = aEntry[0] + 'watching/'
+                    sThumb = str(aEntry[1].encode('latin-1'),'utf-8')
+                    sDesc = ""
+
+                    oOutputParameterHandler.addParameter('siteUrl', siteUrl)
+                    oOutputParameterHandler.addParameter('sMovieTitle', sTitle)
+                    oOutputParameterHandler.addParameter('sThumb', sThumb)
+            
+
+ 
+                    oGui.addEpisode(SITE_IDENTIFIER, 'showServer', sTitle, '', sThumb, sDesc, oOutputParameterHandler)
+   '''
+    
+    '''''
     oParser = cParser()
     sStart = '<section aria-label="seasons">'
     sEnd = '<ul class="tabcontent" id="related">'
     sHtmlContent = oParser.abParse(sHtmlContent, sStart, sEnd)
-    
+    '''
+    '''''
     oRequest = cRequestHandler(sUrl)
     oRequest.addHeaderEntry('User-Agent', UA)
     data = oRequest.request()
@@ -590,6 +675,7 @@ def showEps():
 
             oParser = cParser()
             aResult = oParser.parse(page, sPattern)
+   
     
 
    
@@ -612,13 +698,15 @@ def showEps():
  
                     oGui.addEpisode(SITE_IDENTIFIER, 'showServer', sTitle, '', sThumb, sDesc, oOutputParameterHandler)
  
-
+                       '''
        
     oGui.setEndOfDirectory() 
 
   
 def showServer():
     import requests
+      
+ 
     oGui = cGui()
    
     oInputParameterHandler = cInputParameterHandler()
@@ -662,6 +750,7 @@ def showServer():
      # (.+?) ([^<]+) .+?
 
     if aResult:
+         #   xbmcgui.Dialog().ok("selectElE", str("selectElE"))
             iframe = soup.find_all("iframe")
             iframe_str = str(iframe)
 
@@ -669,6 +758,7 @@ def showServer():
             sPattern = r'<iframe[^>]+src="([^"]+)"'
             ifram_src = re.findall(sPattern, iframe_str, re.DOTALL)
             sHosterUrl =f' https:{str(ifram_src[0])}'
+         #   xbmcgui.Dialog().ok(str(sHosterUrl))
          #   xbmcgui.Dialog().ok("src", str(   sHosterUrl ))
             oHoster = cHosterGui().checkHoster(sHosterUrl)
             sTitle=sMovieTitle
@@ -700,7 +790,7 @@ def showServer():
                 _requests=requests.get(Filemoon_link)
                 soup=BeautifulSoup(_requests.text,"html.parser") 
                 selectElE = soup.find_all("div", attrs={"class": "specific-class"})
-                xbmcgui.Dialog().ok("selectElE", str(selectElE))
+              
                 sHosterUrl =Filemoon_link
                 
                 oHoster = cHosterGui().checkHoster(sHosterUrl)
@@ -712,182 +802,6 @@ def showServer():
                 pass
 
     
-    
-            """
-        t_script = re.findall('<script.*?;.*?\'(.*?);', data, re.S)
-        t_int = re.findall('/g.....(.*?)\)', data, re.S)
-        if t_script and t_int:
-            script = t_script[0].replace("'",'')
-            script = script.replace("+",'')
-            script = script.replace("\n",'')
-            sc = script.split('.')
-            page = ''
-            for elm in sc:
-                c_elm = base64.b64decode(elm+'==').decode()
-                t_ch = re.findall('\d+', c_elm, re.S)
-                if t_ch:
-                    nb = int(t_ch[0])+int(t_int[0])
-                    page = page + chr(nb)
-
-              """
-    # (.+?) .+? ([^<]+)        	
-         
-                               
-         #   sPattern =  r'<ul\s+class="[^"]*\btabcontent\b[^"]*\bactive\b[^"]*"\s+id="watch">'
-      #      oParser = cParser()
-      #      aResult = oParser.parse(page, sPattern)
-       #     xbmcgui.Dialog().ok("showServer",data)
-
-
-    '''''
-            if html:
-                for aEntry in html:
-            
-                    url = aEntry[0]
-                    sTitle = aEntry[1].replace('</i>',"")
-                    sTitle = ('%s  [COLOR coral]%s[/COLOR]') % (sMovieTitle, sTitle)
-                    url = url.replace("cimanow","rrsrr")
-                    sThumb = sThumb
-                    if url.startswith('//'):
-                        url = 'http:' + url
-				
-					
-            
-                    sHosterUrl = url 
-                    if 'userload' in sHosterUrl:
-                        sHosterUrl = sHosterUrl + "|Referer=" + URL_MAIN
-                    if 'moshahda' in sHosterUrl:
-                        sHosterUrl = sHosterUrl + "|Referer=" + URL_MAIN
-                    if 'mystream' in sHosterUrl:
-                        sHosterUrl = sHosterUrl + "|Referer=" + URL_MAIN  
-                    oHoster = cHosterGui().checkHoster(sHosterUrl)
-                    if oHoster:
-                        oHoster.setDisplayName(sTitle)
-                        oHoster.setFileName(sMovieTitle)
-                    cHosterGui().showHoster(oGui, oHoster, sHosterUrl, sThumb)
-
-            sPattern = '<iframe src="([^"]+)" scrolling'
-            oParser = cParser()
-            aResult = oParser.parse(page, sPattern)
-
-	
-            if aResult[0]:
-                for aEntry in aResult[1]:
-                    url = aEntry
-                    sTitle = sMovieTitle
-                    if url.startswith('//'):
-                        url = 'http:' + url
-				
-					
-            
-                    sHosterUrl = url 
-                    if 'userload' in sHosterUrl:
-                        sHosterUrl = sHosterUrl + "|Referer=" + URL_MAIN
-                    if 'moshahda' in sHosterUrl:
-                        sHosterUrl = sHosterUrl + "|Referer=" + URL_MAIN
-                    if 'mystream' in sHosterUrl:
-                        sHosterUrl = sHosterUrl + "|Referer=" + URL_MAIN 
-                    oHoster = cHosterGui().checkHoster(sHosterUrl)
-                    if oHoster:
-                        oHoster.setDisplayName(sTitle)
-                        oHoster.setFileName(sMovieTitle)
-                    cHosterGui().showHoster(oGui, oHoster, sHosterUrl, sThumb)
-
-            sPattern = '<a href="([^"]+)"><i class="fa fa-download">'
-            oParser = cParser()
-            aResult = oParser.parse(data, sPattern)
-
-	
-            if aResult[0]:
-                for aEntry in aResult[1]:
-                    url = aEntry
-                    sTitle = sMovieTitle
-                    if url.startswith('//'):
-                        url = 'http:' + url
-				
-					
-            
-                    sHosterUrl = url 
-                    if 'userload' in sHosterUrl:
-                        sHosterUrl = sHosterUrl + "|Referer=" + URL_MAIN
-                    if 'moshahda' in sHosterUrl:
-                        sHosterUrl = sHosterUrl + "|Referer=" + URL_MAIN
-                    if 'mystream' in sHosterUrl:
-                        sHosterUrl = sHosterUrl + "|Referer=" + URL_MAIN  
-                    oHoster = cHosterGui().checkHoster(sHosterUrl)
-                    if oHoster:
-                        oHoster.setDisplayName(sTitle)
-                        oHoster.setFileName(sMovieTitle)
-                    cHosterGui().showHoster(oGui, oHoster, sHosterUrl, sThumb)
-
-    #Recuperation infos
-            sId = ''
-            sPattern = 'data-id="([^"]+)"'
-            aResult = oParser.parse(page, sPattern)
-    
-            if (aResult[0]):
-                sId = aResult[1][0]
-     # (.+?) ([^<]+) .+?
-
-            sPattern = 'data-index="([^"]+)"'
-            aResult = oParser.parse(page, sPattern)
-            #VSlog(aResult)
-
-   
-            if aResult[0]:
-                for aEntry in aResult[1]:
-
-                    sTitle = 'server '
-                    siteUrl = URL_MAIN + '/wp-content/themes/Cima%20Now%20New/core.php?action=switch&index='+aEntry+'&id='+sId
-                    hdr = {'User-Agent' : 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:66.0) Gecko/20100101 Firefox/66.0','host' : host,'referer' : URL_MAIN}
-                    params = {'action':'switch','index':aEntry,'id':sId}
-                    St=requests.Session()
-                    sHtmlContent = St.get(siteUrl,headers=hdr,params=params)
-                    oRequestHandler = cRequestHandler(siteUrl)
-                    sData = oRequestHandler.request()
-                  
-                    if 'adilbo' in sData:
-                        t_script = re.findall('<script.*?;.*?\'(.*?);', sData, re.S)
-                        t_int = re.findall('/g.....(.*?)\)', sData, re.S)
-                        if t_script and t_int:
-                            script = t_script[0].replace("'",'')
-                            script = script.replace("+",'')
-                            script = script.replace("\n",'')
-                            sc = script.split('.')
-                            spage = ''
-                            for elm in sc:
-                                c_elm = base64.b64decode(elm+'==').decode()
-                                t_ch = re.findall('\d+', c_elm, re.S)
-                                if t_ch:
-                                    nb = int(t_ch[0])+int(t_int[0])
-                                    spage = page + chr(nb)
-
-                            sPattern = '<iframe src="(.+?)" scrolling'
-                            oParser = cParser()
-                            aResult = oParser.parse(spage, sPattern)
-                            if aResult[0]:
-                                for aEntry in aResult[1]:
-            
-                                    url = aEntry
-                                    sTitle = sMovieTitle
-                                    if url.startswith('//'):
-                                        url = 'http:' + url
-            
-                                    sHosterUrl = url
-                                    if 'userload' in sHosterUrl:
-                                        sHosterUrl = sHosterUrl + "|Referer=" + URL_MAIN
-                                    if 'moshahda' in sHosterUrl:
-                                        sHosterUrl = sHosterUrl + "|Referer=" + URL_MAIN
-                                    if 'mystream' in sHosterUrl:
-                                        sHosterUrl = sHosterUrl + "|Referer=" + URL_MAIN   
-                                    oHoster = cHosterGui().checkHoster(sHosterUrl)
-                                    if oHoster:
-                                        oHoster.setDisplayName(sMovieTitle)
-                                        oHoster.setFileName(sMovieTitle)
-                                        cHosterGui().showHoster(oGui, oHoster, sHosterUrl, sThumb)
-
-
-                           '''''
     oGui.setEndOfDirectory()
 
 #print("hi")
