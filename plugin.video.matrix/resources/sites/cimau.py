@@ -2,7 +2,7 @@
 # zombi https://github.com/zombiB/zombi-addons/
 
 import re
-	
+import xbmcgui
 import base64
 import requests
 from requests.compat import urlparse
@@ -27,11 +27,11 @@ URL_MAIN = siteManager().getUrlMain(SITE_IDENTIFIER)
 
 
 RAMADAN_SERIES = (URL_MAIN + '/search/label/%D9%85%D8%B3%D9%84%D8%B3%D9%84%D8%A7%D8%AA%20%D8%B1%D9%85%D8%B6%D8%A7%D9%86%202024', 'showSeries')
-MOVIE_EN = (URL_MAIN + '/category/افلام-اجنبي-movies7-english/', 'showMovies')
-MOVIE_AR = (URL_MAIN + '/category/افلام-عربي-arabic5-movies/', 'showMovies')
-MOVIE_HI = (URL_MAIN + '/category/افلام-هندي-indian/', 'showMovies')
-MOVIE_ASIAN = (URL_MAIN + '/category/افلام-اجنبي-movies7-english/افلام-asian-movies/', 'showMovies')
-KID_MOVIES = (URL_MAIN + '/category/افلام-كرتون-movies5-anime/', 'showMovies')
+MOVIE_EN = (URL_MAIN + 'category/all-content-5/movies-5/افلام-اجنبي-3/', 'showMovies')
+MOVIE_AR = (URL_MAIN + '/category/all-content-5/movies-5/افلام-عربى-4/', 'showMovies')
+MOVIE_HI = (URL_MAIN + '/category/all-content-5/movies-5/افلام-هندى-4/', 'showMovies')
+MOVIE_TUK = (URL_MAIN + '/category/all-content-5/movies-5/افلام-تركى-4/', 'showMovies')
+KID_MOVIES = (URL_MAIN + '/category/all-content-5/movies-5/افلام-كرتون-4/', 'showMovies')
 MOVIE_NETFLIX = (URL_MAIN + '/category/%d8%a7%d9%81%d9%84%d8%a7%d9%85-%d8%a7%d8%ac%d9%86%d8%a8%d9%8a-movies7-english/netflix-movie/', 'showMovies')
 
 SERIE_TR = (URL_MAIN + '/category/مسلسلات-7series/مسلسلات-تركية-series1-turkish/', 'showSeries')
@@ -72,8 +72,8 @@ def load():
     oOutputParameterHandler.addParameter('siteUrl', MOVIE_AR[0])
     oGui.addDir(SITE_IDENTIFIER, 'showMovies', 'أفلام عربية', icons + '/Arabic.png', oOutputParameterHandler)
  
-    oOutputParameterHandler.addParameter('siteUrl', MOVIE_ASIAN[0])
-    oGui.addDir(SITE_IDENTIFIER, 'showMovies', 'أفلام أسيوية', icons + '/Asian.png', oOutputParameterHandler)
+    oOutputParameterHandler.addParameter('siteUrl', MOVIE_TUK[0])
+    oGui.addDir(SITE_IDENTIFIER, 'showMovies', 'أفلام تركي', icons + '/Asian.png', oOutputParameterHandler)
     
     oOutputParameterHandler.addParameter('siteUrl', MOVIE_HI[0])
     oGui.addDir(SITE_IDENTIFIER, 'showMovies', 'أفلام هندية', icons + '/Hindi.png', oOutputParameterHandler)
@@ -187,27 +187,84 @@ def showPack():
     oGui.setEndOfDirectory()
 			
 def showMovies(sSearch = ''):
+  
     oGui = cGui()
     if sSearch:
       sUrl = sSearch
     else:
         oInputParameterHandler = cInputParameterHandler()
         sUrl = oInputParameterHandler.getValue('siteUrl')
+      #  xbmcgui.Dialog().ok("",sUrl)
 
     oParser = cParser() 
     oRequestHandler = cRequestHandler(sUrl)
     sHtmlContent = oRequestHandler.request()
+  
 
-    sStart = 'class="PageContent">'
-    sEnd = '<script'
-    sHtmlContent = oParser.abParse(sHtmlContent, sStart, sEnd) 
+   # sStart = 'class="PageContent">'
+   # sEnd = '<script'
+  #  sHtmlContent = re.findall(sHtmlContent, sStart, sEnd)
+    soup=BeautifulSoup(sHtmlContent,"html.parser")
 
-    sPattern = '<li class="MovieBlock">\s*<a href="([^"]+)".+?data-image="([^"]+)".+?class="Category">.+?</div>([^<]+)</div>'
-    aResult = oParser.parse(sHtmlContent, sPattern)
-    if aResult[0]:
-        oOutputParameterHandler = cOutputParameterHandler()    
-        for aEntry in aResult[1]:
+ #   sPattern = r'<ul\s+class="Cima4uBlocks"\s+id="post-container">(.*?)</ul>'
+    Cima4uBlocks = soup.find_all("li", class_="MovieBlock")
+   # count = len(Cima4uBlocks)
+   # xbmcgui.Dialog().ok("Cima4uBlocks",str(count))
+    sPattern = r'<a\s+href="([^"]+)".*?data-image="([^"]+)".*?<h3>(.*?)</h3>'
+
+  #  html_content = "".join(str(block) for block in Cima4uBlocks)
+ #   aResult =str (Cima4uBlocks)
+ #   xbmcgui.Dialog().ok("aResult",str(aResult))
+    aResult = []
+    for xEntry in Cima4uBlocks:
+      xEntryStr = str(xEntry)
+      aEntry = re.findall(sPattern, xEntryStr, re.DOTALL)
+      if aEntry:  # Ensure there's a match
+        aResult.extend(aEntry)
+      oOutputParameterHandler = cOutputParameterHandler() 
+     
+# Display all results in one dialog
+   #   xbmcgui.Dialog().ok("aResult", str(len(aResult)))
+
+      for aEntry in aResult:
+         
+           sTitle = aEntry[2].replace("مشاهدة","").replace("مسلسل","").replace("انمي","").replace("مترجمة","").replace("ومترجمه","").replace("مترجم","").replace("برنامج","").replace("فيلم","").replace("والأخيرة","").replace("والاخيرة","").replace("كاملة","").replace("حلقات كاملة","").replace("اونلاين","").replace("مباشرة","").replace("انتاج ","").replace("جودة عالية","").replace("كامل","").replace("HD","").replace("السلسلة الوثائقية","").replace("الفيلم الوثائقي","").replace("اون لاين","")
+        
+           siteUrl = aEntry[0]+"?wat=1"
+          # xbmcgui.Dialog().ok("aEntry", str(siteUrl))
+           sThumb = aEntry[1].replace("(","").replace(")","")
+           sDesc = ''
+           sYear = ''
+           oOutputParameterHandler.addParameter('siteUrl',siteUrl)
+           oOutputParameterHandler.addParameter('sMovieTitle', sTitle)
+           oOutputParameterHandler.addParameter('sThumb', sThumb)
+           oOutputParameterHandler.addParameter('sYear', sYear)
+           oOutputParameterHandler.addParameter('sDesc', sDesc)
+           oGui.addMovie(SITE_IDENTIFIER, 'showLinks', sTitle, '', sThumb, sDesc, oOutputParameterHandler)
+            
+          
  
+
+  
+
+
+  
+  
+
+   
+   
+   
+
+   
+          #  
+    '''  if aResult :
+     
+
+   
+     for aEntry in aResult:
+
+        
+       
             sTitle = aEntry[2].replace("مشاهدة","").replace("مسلسل","").replace("انمي","").replace("مترجمة","").replace("ومترجمه","").replace("مترجم","").replace("برنامج","").replace("فيلم","").replace("والأخيرة","").replace("والاخيرة","").replace("كاملة","").replace("حلقات كاملة","").replace("اونلاين","").replace("مباشرة","").replace("انتاج ","").replace("جودة عالية","").replace("كامل","").replace("HD","").replace("السلسلة الوثائقية","").replace("الفيلم الوثائقي","").replace("اون لاين","")
             siteUrl = aEntry[0]
             sThumb = aEntry[1].replace("(","").replace(")","")
@@ -271,7 +328,7 @@ def showMovies(sSearch = ''):
 			
             oGui.addDir(SITE_IDENTIFIER, 'showMovies', sTitle, '', oOutputParameterHandler)
 
- 
+ '''
     if not sSearch:
         oGui.setEndOfDirectory()
 
@@ -519,11 +576,30 @@ def showLinks():
    
     oInputParameterHandler = cInputParameterHandler()
     sUrl = oInputParameterHandler.getValue('siteUrl')
+  #  xbmcgui.Dialog().ok("aEntry", str(sUrl))
     sMovieTitle = oInputParameterHandler.getValue('sMovieTitle')
     sThumb = oInputParameterHandler.getValue('sThumb')
 
     oRequestHandler = cRequestHandler(sUrl)
     sHtmlContent = oRequestHandler.request()
+    soup = BeautifulSoup(sHtmlContent,"html.parser")
+   # Correctly find elements using BeautifulSoup
+    severs = soup.find_all("a", class_="sever_link")
+    for server in severs:
+        sHosterUrl=server['data-embed']
+    #    xbmcgui.Dialog().ok("link",str ((sHosterUrl)))
+      
+        
+        oHoster = cHosterGui().checkHoster(sHosterUrl)
+        if oHoster:
+            oHoster.setDisplayName( sMovieTitle)
+            oHoster.setFileName(sMovieTitle)
+            cHosterGui().showHoster(oGui, oHoster, sHosterUrl, sThumb)
+        pass
+    oGui.setEndOfDirectory()  
+
+   
+
 
     mov_name_match = re.search(r'name="mov_name" value="(.*?)"', sHtmlContent)
     mov_url_match = re.search(r'name="mov_url" value="(.*?)"', sHtmlContent)
@@ -552,8 +628,13 @@ def showLinks():
     oRequestHandler.addParameters('mov_url', mov_url)
     oRequestHandler.addParameters('submit', submit)
     sHtmlContent = oRequestHandler.request()
+    
 
-    sLinks = re.findall(r'data-value="(.*?)"', sHtmlContent)
+# Display a notification with the count of elements found
+  
+  
+
+    sLinks = re.findall(r'sever_link="(.*?)"', sHtmlContent)
     for link in sLinks:
         sHosterUrl = link
         sDisplayTitle = sMovieTitle + get_resolution_label(link) 
