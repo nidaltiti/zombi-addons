@@ -2,6 +2,9 @@
 # zombi https://github.com/zombiB/zombi-addons/
 
 import re
+import xbmcgui
+from bs4 import BeautifulSoup
+
 	
 from resources.lib.gui.hoster import cHosterGui
 from resources.lib.gui.gui import cGui
@@ -20,7 +23,7 @@ SITE_DESC = 'arabic vod'
  
 URL_MAIN = siteManager().getUrlMain(SITE_IDENTIFIER)
 RAMADAN_SERIES = (URL_MAIN + '/genre/ramadan2024', 'showSeries')
-MOVIE_EN = (URL_MAIN + '/genre/english-movies/', 'showMovies')
+MOVIE_EN = (URL_MAIN + 'genre/english-movies/', 'showMovies')
 MOVIE_AR = (URL_MAIN + '/genre/arabic-movies/', 'showMovies')
 
 MOVIE_FAM = (URL_MAIN + '/genre/family/', 'showMovies')
@@ -82,8 +85,10 @@ def load():
 
     oOutputParameterHandler.addParameter('siteUrl', THEATER[0])
     oGui.addDir(SITE_IDENTIFIER, 'showMovies', 'مسرحيات', icons + '/Theater.png', oOutputParameterHandler)
+    #xbmcgui.Dialog().ok("",str(URL_MAIN))
                        
     oGui.setEndOfDirectory()
+    
  
 def showSearch():
     oGui = cGui()
@@ -112,9 +117,11 @@ def showMoviesSearch(sSearch = ''):
     else:
         oInputParameterHandler = cInputParameterHandler()
         sUrl = oInputParameterHandler.getValue('siteUrl')
+      
  
     oRequestHandler = cRequestHandler(sUrl)
     sHtmlContent = oRequestHandler.request()
+  
     
      # (.+?) ([^<]+) .+?
 
@@ -148,7 +155,7 @@ def showMoviesSearch(sSearch = ''):
 			
             oGui.addMovie(SITE_IDENTIFIER, 'showServer', sTitle, '', sThumb, sDesc, oOutputParameterHandler)
  
-        sNextPage = __checkForNextPage(sHtmlContent)
+        sNextPage = __checkForNextPage(sHtmlContent,sUrl)
         if sNextPage:
             oOutputParameterHandler = cOutputParameterHandler()
             oOutputParameterHandler.addParameter('siteUrl', sNextPage)
@@ -200,7 +207,7 @@ def showSeriesSearch(sSearch = ''):
             oGui.addTV(SITE_IDENTIFIER, 'showEpisodes', sTitle, '', sThumb, sDesc, oOutputParameterHandler)
 
  
-        sNextPage = __checkForNextPage(sHtmlContent)
+        sNextPage = __checkForNextPage(sHtmlContent,sUrl)
         if sNextPage:
             oOutputParameterHandler = cOutputParameterHandler()
             oOutputParameterHandler.addParameter('siteUrl', sNextPage)
@@ -211,15 +218,18 @@ def showSeriesSearch(sSearch = ''):
 
 		
 def showMovies(sSearch = ''):
+ #   xbmcgui.Dialog().ok("sNextPage",str (sNextPage))
     oGui = cGui()
     if sSearch:
       sUrl = sSearch
     else:
         oInputParameterHandler = cInputParameterHandler()
         sUrl = oInputParameterHandler.getValue('siteUrl')
+     #   xbmcgui.Dialog().ok("",str(sUrl))
  
     oRequestHandler = cRequestHandler(sUrl)
     sHtmlContent = oRequestHandler.request()
+  
      # (.+?) ([^<]+) .+?
 
     sPattern = '<img src="([^<]+)" alt="([^<]+)">.+?</div><a href="([^<]+)"><div class="see">.+?<span>([^<]+)</span> <span>.+?class="texto">(.+?)</div>'
@@ -252,7 +262,8 @@ def showMovies(sSearch = ''):
 			
             oGui.addMovie(SITE_IDENTIFIER, 'showServer', sTitle, '', sThumb, sDesc, oOutputParameterHandler)
 			
-        sNextPage = __checkForNextPage(sHtmlContent)
+        sNextPage = __checkForNextPage(sHtmlContent,sUrl)
+  #      xbmcgui.Dialog().ok("sNextPage",str (sNextPage))
         if sNextPage:
             oOutputParameterHandler = cOutputParameterHandler()
             oOutputParameterHandler.addParameter('siteUrl', sNextPage)
@@ -297,7 +308,7 @@ def showTopMovies(sSearch = ''):
             oGui.addMovie(SITE_IDENTIFIER, 'showServer', sTitle, '', sThumb, sDesc, oOutputParameterHandler)
 
  
-        sNextPage = __checkForNextPage(sHtmlContent)
+        sNextPage = __checkForNextPage(sHtmlContent,sUrl)
         if sNextPage:
             oOutputParameterHandler = cOutputParameterHandler()
             oOutputParameterHandler.addParameter('siteUrl', sNextPage)
@@ -343,7 +354,7 @@ def showSeries(sSearch = ''):
             oGui.addTV(SITE_IDENTIFIER, 'showEpisodes', sTitle, '', sThumb, sDesc, oOutputParameterHandler)
 
  
-        sNextPage = __checkForNextPage(sHtmlContent)
+        sNextPage = __checkForNextPage(sHtmlContent,sUrl)
         if sNextPage:
             oOutputParameterHandler = cOutputParameterHandler()
             oOutputParameterHandler.addParameter('siteUrl', sNextPage)
@@ -356,10 +367,11 @@ def showEpisodes():
     oGui = cGui()
     
     oInputParameterHandler = cInputParameterHandler()
-    sUrl = oInputParameterHandler.getValue('siteUrl')
+    sUrl = oInputParameterHandler.getValue('siteUrl').replace("https","http")
     sMovieTitle = oInputParameterHandler.getValue('sMovieTitle')
     sThumb = oInputParameterHandler.getValue('sThumb')
     sDesc = oInputParameterHandler.getValue('sDesc')
+   # xbmcgui.Dialog().ok("sUrl",str (sUrl))
  
     oRequestHandler = cRequestHandler(sUrl)
     sHtmlContent = oRequestHandler.request()
@@ -422,25 +434,69 @@ def showEpisodes():
     oGui.setEndOfDirectory()
 
  
-def __checkForNextPage(sHtmlContent):
-    sPattern = '<link rel="next" href="(.+?)" />'
-    oParser = cParser()
-    aResult = oParser.parse(sHtmlContent, sPattern)
-    if aResult[0]:
-        return aResult[1][0]
+def __checkForNextPage(sHtmlContent, surl):
+    pattern = r'<div class="pagination">.*?</div>'
+
+# Extract the block
+    match = re.search(pattern, sHtmlContent, re.DOTALL)
+
+    if match:
+     pagination_block = match.group(0)
+     current_pattern = r'<span class="current">([^<]+)</span>'
+
+# Find all matches
+     current = re.search(current_pattern, pagination_block)
+     numb_page = int(current.group(1))  # Use group(1) to get the page number from the <span> tag
+     numb_page += 1 
+ #    xbmcgui.Dialog().ok("pagination_block",str(pagination_block))
+     a_pattern = r'<a[^>]*href="([^"]+)"[^>]*>(.*?)</a>'
+     soup = BeautifulSoup(pagination_block, 'html.parser')
+     links = soup.find_all('a', class_="inactive")
+     span_text = soup.find('span').text
+  #   xbmcgui.Dialog().ok("Link",  str(span_text))
+     
+     numbers = re.findall(r'\d+', span_text) 
+  #   xbmcgui.Dialog().ok("Link",  str(numbers[1]))
+     if numb_page<=int(numbers[1]):
+
+
+# Loop through the found links and display their href attribute
+    
+      pattern = r"genre/[^/]+/"
+      genre = re.search(pattern, surl)
+      link_reult= f"{URL_MAIN}{str (genre.group())}page/{str (numb_page)}"
+      return_aResult=  link_reult
+
+      return_aResult=return_aResult.replace("https","http")
+   #   return_aResult="http://show.alfajertv.com/genre/english-movies/page/2"
+      return return_aResult
+     
+        
+    
+             
+             
+             
+    
+     
+   
     return False
 	
 def showServer():
     oGui = cGui()
    
     oInputParameterHandler = cInputParameterHandler()
-    sUrl = oInputParameterHandler.getValue('siteUrl')
+    sUrl = oInputParameterHandler.getValue('siteUrl').replace("https","http")
     sMovieTitle = oInputParameterHandler.getValue('sMovieTitle')
     sThumb = oInputParameterHandler.getValue('sThumb')
+   # xbmcgui.Dialog().ok("sUrl",str (sUrl))
 
 
     oRequestHandler = cRequestHandler(sUrl)
     sHtmlContent = oRequestHandler.request()
+ 
+   
+ 
+
     #VSlog(sHtmlContent)
     oParser = cParser()
     Host = URL_MAIN.split('//')[1]
