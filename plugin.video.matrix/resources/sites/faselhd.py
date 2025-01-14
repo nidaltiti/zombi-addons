@@ -2,6 +2,7 @@
 # zombi https://github.com/zombiB/zombi-addons/
 
 import re
+import base64
 	
 from resources.lib.gui.hoster import cHosterGui
 from resources.lib.gui.gui import cGui
@@ -18,6 +19,7 @@ icons = ADDON.getSetting('defaultIcons')
 SITE_IDENTIFIER = 'faselhd'
 SITE_NAME = 'Faselhd'
 SITE_DESC = 'arabic vod'
+sHost = base64.b64decode(siteManager().getUrlMain2(SITE_IDENTIFIER)).decode("utf-8")
  
 URL_MAIN = siteManager().getUrlMain(SITE_IDENTIFIER)
 
@@ -538,27 +540,48 @@ def showEpisodes1():
 	
 def showLink():
     oGui = cGui()
+    
    
     oInputParameterHandler = cInputParameterHandler()
     sUrl = oInputParameterHandler.getValue('siteUrl')
     sMovieTitle = oInputParameterHandler.getValue('sMovieTitle')
     sThumb = oInputParameterHandler.getValue('sThumb')
+    oParser = cParser()
 
     oRequestHandler = cRequestHandler(sUrl)
     sHtmlContent = oRequestHandler.request()
+    sPattern = 'player_iframe.location.href = ["\']([^"\']+)["\'].+?</i>(.+?)</a>'
+    aResult = oParser.parse(sHtmlContent, sPattern)	
+    if aResult[0]:
+   #     xbmcgui.Dialog().ok("aResult",str(aResult))
+        for aEntry in aResult[1]:
+
+         sHosterUrl = aEntry[0]
+         sHoster = aEntry[1]
+         sTitle = f'{sMovieTitle} ({sHoster})'
+         oHoster = cHosterGui().getHoster('faselhd') 
+         if oHoster:
+                oHoster.setDisplayName(sTitle)
+                oHoster.setFileName(sMovieTitle)
+                cHosterGui().showHoster(oGui, oHoster, sHosterUrl, sThumb) 
+        pass
+    '''''
     
     oParser = cParser()
     
     #Recuperation infos
     sNote = ''
 
-    sPattern = '<div class="singleDesc">.+?<p>([^<]+)</p>'
+    sPattern = '<div class="singlePage">.+?<p>([^<]+)</p>'
     aResult = oParser.parse(sHtmlContent, sPattern)
-    
+ 
+    soup = BeautifulSoup(sHtmlContent, 'html.parser')
+    xid=soup.find_all("div",id="singleDesc")
+    xbmcgui.Dialog().ok("html",str (xid) )
     if (aResult[0]):
         sNote = aResult[1][0]
         xbmcgui.Dialog().ok("text",str(sNote))   
-			
+       
      # (.+?) ([^<]+) .+?
     sPattern = 'onclick="player_iframe.location.href = ([^<]+)"><a.+?href="javascript:;"><i.+?class="fa fa-play-circle"></i>([^<]+)</a></li>'
 
@@ -592,7 +615,7 @@ def showLink():
 
     # (.+?)
 
-    sPattern = 'onclick="player_iframe.location.href = ([^<]+)">'
+    sPattern = 'player_iframe.location.href = ["\']([^"\']+)["\'].+?</i>(.+?)</a>'
     oParser = cParser()
     aResult = oParser.parse(sHtmlContent, sPattern)
     #VSlog("Link Pattern :" +sPattern)
@@ -609,13 +632,13 @@ def showLink():
             if url.startswith('//'):
                url = 'http:' + url
             
-            sHosterUrl = url
+            sHosterUrl = aEntry[0]
             oHoster = cHosterGui().checkHoster(sHosterUrl)
-            xbmcgui.Dialog().ok("text",str(sHosterUrl))  
+            xbmcgui.Dialog().ok("n",str(sHosterUrl))  
             if oHoster:
                oHoster.setDisplayName(sMovieTitle)
                oHoster.setFileName(sMovieTitle)
-               cHosterGui().showHoster(oGui, oHoster, sHosterUrl, sThumb)
+               cHosterGui().showHoster(oGui, oHoster, sHosterUrl, sThumb)'''
 				
 
     oGui.setEndOfDirectory()       
@@ -746,3 +769,22 @@ def showHosters():
 
                 
     oGui.setEndOfDirectory()
+    pass
+# https://github.com/MatrixFlix/Dist/blob/main/repo/plugin.video.matrixflix/resources/hosters/faselhd.p
+def decode_page(data):
+    t_script = re.findall('var adilbo.*?;.*?\'(.*?);', data, re.S)
+    t_int = re.findall('/g.....(.*?)\)', data, re.S)
+    if t_script and t_int:
+        script = t_script[0].replace("'",'')
+        script = script.replace("+",'')
+        script = script.replace("\n",'')
+        sc = script.split('.')
+        page = ''
+        for elm in sc:
+            c_elm = base64.b64decode(elm+'==').decode()
+            t_ch = re.findall('\d+', c_elm, re.S)
+            if t_ch:
+                nb = int(t_ch[0])+int(t_int[1])
+                page = page + chr(nb)
+
+    return page
