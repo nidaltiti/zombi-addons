@@ -2,6 +2,11 @@
 # zombi https://github.com/zombiB/zombi-addons/
 
 import re
+import xbmcgui
+import base64
+import urllib.parse
+import requests
+from resources.lib.multihost import cMegamax
 
 	
 from resources.lib.gui.hoster import cHosterGui
@@ -436,28 +441,92 @@ def showHosters():
     sThumb = oInputParameterHandler.getValue('sThumb')
 
     oRequestHandler = cRequestHandler(sUrl+"/watch/")
+     
+
     oRequestHandler.addHeaderEntry('User-Agent', 'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:45.0) Gecko/20100101 Firefox/45.0')
     oRequestHandler.addHeaderEntry('Accept', 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8')
     oRequestHandler.addHeaderEntry('X-Requested-With', 'XMLHttpRequest')
     oRequestHandler.addHeaderEntry('Accept-Language', 'fr,fr-FR;q=0.8,en-US;q=0.5,en;q=0.3')
+    
     sHtmlContent = oRequestHandler.request()
     # (.+?) ([^<]+) .+?
               
     sPattern = 'data-link="(.+?)" class='
     oParser = cParser()
     aResult = oParser.parse(sHtmlContent, sPattern)
-  
-
+    oOutputParameterHandler=cOutputParameterHandler()
+     
     if aResult[0]:
 
         for aEntry in aResult[1]:           
             url = aEntry
-           
+            url=  decode_string(url)
+            xbmcgui.Dialog().ok("url",str(url))
+            sServer = aEntry[1].replace('Govid','govid.me').replace('متعدد الجودات','tuktukmulti').replace('TukTuk Vip','megamax')
+            if url.startswith('//'):
+               url = f'http:{url}'
+               
+								
+            sHosterUrl = url 
+            if "megaxmax" in  sHosterUrl :
+             data=[]
+             data =GetDataUrls(sHosterUrl)
+           # xbmcgui.Dialog().ok("url",str(data))
+             for ele in data:
+                sHosterUrl =ele.get("url")
+               
+                sQual=ele.get("qual")
+                sLabel=next( iter ( ele.get("label")))
+                sDisplayTitle = f'{sMovieTitle} ({sQual}) [COLOR coral]{sLabel}[/COLOR]'
+                oOutputParameterHandler.addParameter('sHosterUrl', sHosterUrl)
+                oOutputParameterHandler.addParameter('siteUrl', sUrl)
+                oOutputParameterHandler.addParameter('sQual', sQual)
+                oOutputParameterHandler.addParameter('sMovieTitle', sMovieTitle)
+                oOutputParameterHandler.addParameter('sThumb', sThumb)
+                oGui.addLink(SITE_IDENTIFIER, 'showLinks', sDisplayTitle, sThumb, sDisplayTitle, oOutputParameterHandler)
+            
+             
+                
+               # xbmcgui.Dialog().ok("ele",str (sHosterUrl))
+          
+# Define the regex pattern to extract URL, quality, and label
+         #   pattern = r"url=(.*?), qual=(.*?), label=(.*?)\n"
+
+# Find all matches using the regex pattern
+         #   matches = re.findall(pattern, data)
+
+# Iterate over each match and process the information
+         #   for item in data:
+      #       sHosterUrl = str (item ) # Extracted URL
+         #   sQual = item[1]       # Extracted quality
+         #    sLabel = item[2]      # Extracted label
+     #        xbmcgui.Dialog().ok("sHosterUrl",str(sHosterUrl))
+
+    # Prepare the display title with formatting
+            '''      sDisplayTitle = f'{sMovieTitle} ({sQual}) [COLOR coral]{sLabel}[/COLOR]'
+
+    # Add parameters to the output parameter handler
+             oOutputParameterHandler.addParameter('sHosterUrl', sHosterUrl)
+             oOutputParameterHandler.addParameter('siteUrl', sUrl)
+             oOutputParameterHandler.addParameter('sQual', sQual)
+             oOutputParameterHandler.addParameter('sMovieTitle', sMovieTitle)
+             oOutputParameterHandler.addParameter('sThumb', sThumb)
+
+    # Add the link to the GUI with the appropriate parameters
+             oGui.addLink(SITE_IDENTIFIER, 'showLinks', sDisplayTitle, sThumb, sDisplayTitle, oOutputParameterHandler)'''
+            
+            '''''
+            if bool(re.search(r'mega.*max', sHosterUrl)) or bool(re.search(r'mega.*max', sServer)):
+                data = cMegamax().GetUrls(sHosterUrl)
+                xbmcgui.Dialog().ok("url",str(data))'''''
+        
             sTitle = " " 
             if url.startswith('//'):
+       #        sServer = aEntry[1].replace('Govid','govid.me').replace('متعدد الجودات','tuktukmulti').replace('TukTuk Vip','megamax')
                url = 'http:' + url
 								
             sHosterUrl = url 
+            
          
             if '?download_' in sHosterUrl:
                sHosterUrl = sHosterUrl.replace("moshahda","ffsff")
@@ -482,6 +551,7 @@ def showHosters():
     if aResult[0]:
         for aEntry in aResult[1]:           
             url = aEntry[0]
+            url=  decode_string(url)
             sTitle = sMovieTitle+'('+aEntry[1]+')' 
             if url.startswith('//'):
                url = 'http:' + url
@@ -511,6 +581,7 @@ def showHosters():
     if aResult[0]:
         for aEntry in aResult[1]:           
             url = aEntry
+            url=  decode_string(url)
             sTitle = " " 
             if url.startswith('//'):
                url = 'http:' + url
@@ -534,3 +605,108 @@ def showHosters():
 				                     
 				               
     oGui.setEndOfDirectory()
+    pass
+
+def showLinks():
+    oGui = cGui()
+
+    oInputParameterHandler = cInputParameterHandler()
+    sHosterUrl = oInputParameterHandler.getValue('sHosterUrl')
+    sMovieTitle = oInputParameterHandler.getValue('sMovieTitle')
+    sThumb = oInputParameterHandler.getValue('sThumb')
+
+    oHoster = cHosterGui().checkHoster(sHosterUrl)
+    if oHoster:
+        oHoster.setDisplayName(sMovieTitle)
+        oHoster.setFileName(sMovieTitle)
+        cHosterGui().showHoster(oGui, oHoster, sHosterUrl, sThumb)
+
+    oGui.setEndOfDirectory()
+    pass
+def decode_string(string):
+    try:
+        import base64
+        string1 = string.split("0REL0Y&")[0]
+        string2 = string1[::-1]
+        decoded_string = base64.b64decode(string2).decode('utf-8')
+        return decoded_string
+    
+    except:
+        return string
+
+
+    pass
+
+def GetDataUrls(url):
+        list_link=[]
+        sHosterUrl = url.replace('download', 'iframe').replace(' ', '')
+
+        print(f"Processed URL: {sHosterUrl}")
+
+        if 'leech' in sHosterUrl or '/e/' in sHosterUrl:
+            return False
+
+        # Initialize a session
+        session = requests.Session()
+
+        # First request to establish the session
+        try:
+            initial_response = session.get(sHosterUrl, headers={
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+                'Accept-Language': 'en-US,en;q=0.5',
+                'Connection': 'keep-alive'
+            })
+
+            if initial_response.status_code != 200:
+                print(f"Error: Initial request failed with status code {initial_response.status_code}")
+                return []
+
+            # Extract version if needed
+            sHtmlContent = initial_response.text
+            sHtmlContent = sHtmlContent.replace('&quot;', '"')
+
+            sVer = ''
+         #   import re
+            sPattern = '"version":"([^"]+)'
+            matches = re.findall(sPattern, sHtmlContent)
+            if matches:
+                sVer = matches[0]
+
+            # Second request with headers
+            headers = {
+                'Referer': sHosterUrl,
+                'Sec-Fetch-Mode': 'cors',
+                'X-Inertia': 'true',
+                'X-Inertia-Partial-Component': 'files/mirror/video',
+                'X-Inertia-Partial-Data': 'streams',
+                'X-Inertia-Version': sVer,
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
+                'Accept': 'application/json, text/plain, */*'
+            }
+
+            response = session.get(sHosterUrl, headers=headers)
+            if response.status_code != 200:
+                print(f"Error: Unable to fetch data, status code {response.status_code}")
+                return []
+
+            # Parse JSON response
+            r = response.json()
+            for key in r['props']['streams']['data']:
+                sQual = key['label'].replace(' (source)', '')
+                for sLink in key['mirrors']:
+                    sHosterUrl = sLink['link']
+                    sLabel = sLink['driver'].capitalize()
+                    if sHosterUrl.startswith('//'):
+                        sHosterUrl = 'https:' + sHosterUrl
+
+                    list_link.append({"url" : sHosterUrl, "qual" : sQual, "label":{sLabel}})
+
+            return list_link
+
+        except Exception as e:
+            print(f"Error: {e}")
+            return []
+
+# Example usage
+

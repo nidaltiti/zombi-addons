@@ -6,6 +6,7 @@ from resources.lib.parser import cParser
 from resources.hosters.hoster import iHoster
 from resources.lib.packer import cPacker
 from resources.lib.comaddon import VSlog
+import xbmcgui 
 UA = 'Mozilla/5.0 (iPad; CPU OS 13_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/87.0.4280.77 Mobile/15E148 Safari/604.1'
 
 class cHoster(iHoster):
@@ -14,6 +15,7 @@ class cHoster(iHoster):
         iHoster.__init__(self, 'vidbom', 'Vidbom')
 
     def _getMediaLinkForGuest(self):
+        xbmcgui.Dialog().ok("ask","hi")
         VSlog(self._url)
         api_call = ''
         oParser = cParser()
