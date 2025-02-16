@@ -223,16 +223,19 @@ class cHosterGui:
         if val:
             return self.getHoster(val.replace('.', ''))
         # Vidshare Clone 
-        vidshare = next((x for x in ['vadshar', 'vidshar', 'vedshaar', 'vedsharr', 'vedshar', 'vedshar', 'vidshare', 'viidshar', 'vdonlineshr', 'vid1shar', '2vid2cdnshar', 'v2d2shr', 
-                            'v1d1shr', 'vd5sr', 'vadsr', 'v3dsh1r', 'vds3r', 'v3dshr', 'vndsh1r', 'vd12s3r'] if x in sHostName), None)
+        vidshare = next((x for x in ['vadshar', 'vidshar', 'vedshaar', 'vedsharr', 'vedshar', 'vedshar', 'vidshare', 'viidshar', 'vid1shar', '2vid2cdnshar', 'v2d2shr', 
+                            'v1d1shr', 'v3dsh1r', 'vds3r', 'v3dshr', 'vndsh1r', 'vd12s3r', 'v31dshr', 'vds1r', 'vdonlineshr', 'v4dshnr', 'vd1sher',
+                            'vd13r', 'vd1sr', 'v1dsr', 'vd2sr', 'v1d2sr', 'v2d3sr', 'vd4sr', 'vadsr', 'van1dsr', 'vv1dsr', 'viidhdr', 'va1dsr', 'vd5sr',
+                            '1vid1shar'] if x in sHostName), None)
         if vidshare:
             return self.getHoster('vidshare')
 				
         # Vidbom Clone 
-        vidbom = next((x for x in ['vidbom', 'vidbm', 'vadbam', 'vedbom', 'vadbom', 'vidbam', 'vedbam', 'viboom', 'vid1bom', 'vdbt3om', 'viid2beem', 'viid1boom', 
+        vidbom = next((x for x in ['vidbom', 'vidbm', 'vadbam', 'vedbom', 'vadbom', 'vidbam', 'vedbam', 'viboom', 'vid1bom', 'viid2beem', 'viid1boom', 
                             'ved2om', 'vid2bom', 'viidboom', 'vig1bm', 'v3db1oom', 'ved1om', 'vvid1om', 'vigom', 've1dp3m', 'vdp1em', 'viid1bem', 'vuidbeaam',
-                            'v2ddb3m', '2vbiim', 'vdb123m', 'vd123bm', 'v3dbeam', 'v3dbtom', 'v7d20bm', 'vdtom', 'vendm', 'vandbm', 'vand1bm', 'vrdb2m', 
-                            'vdbt3om', 'vd5bm', 'v1enbm', 'vd22tom', 'ven1dm'] if x in sHostName), None)
+                            'v2ddb3m', '2vbiim', 'vdb123m', 'vd123bm', 'v3dbeam', 'v3dbtom', 'v7d20bm', 'v7d20bm', 'vdtom', 'vendm', 'vandbm', 'vand1bm', 
+                            'vrdb2m', 'vdbt3om', 'vd22tom', 'ven1dm', 'vrdtem', 'vrd1tem', 'v5db2m', 'vdb1m', 'vendbm', 'v6b3m', 'vd1bm', 'vdb2m', 'v1db2m', 
+                            'v2db3m', 'vd3bm', 'venb1m', 'v1enbm', 'vndtom', 'v1dbm', 'vd5bm', 'vdbtm'] if x in sHostName), None)
         if vidbom:
             return self.getHoster('vidbom')
 
@@ -281,7 +284,8 @@ class cHosterGui:
             return self.getHoster('vidtodo')
 
         # Filemoon Clone
-        filemoon = next((x for x in ['filemoon', 'moonmov', 'allviid', 'all-vid', 'techradar', 'albrq', 'kerapoxy'] if x in sHostName), None)
+        filemoon = next((x for x in ['filemoon', 'moonmov', 'allviid', 'all-vid', 'techradar', 'albrq', 'kerapoxy', 'kinoger', 'smdfs40r', '81u6xl9d',
+                                     '1azayf9w'] if x in sHostName), None)
         if filemoon:
             return self.getHoster("filemoon")
 

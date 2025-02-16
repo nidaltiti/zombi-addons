@@ -4,7 +4,7 @@
 
 # Ignore specific plugin files
 plugin.video.matrix/resources/hosters/lien_direct.py
-plugin.video.matrix/resources/hosters/vidbom.py
+#vplugin.video.matrix/resources/hosters/vidbom.py
 plugin.video.matrix/resources/lib/gui/guiElement.py
 
 # Ignore specific zip files
