@@ -19,6 +19,9 @@ import requests
 import xbmcgui
 import re
 import base64
+from resources.lib import random_ua
+
+UA = random_ua.get_phone_ua()
 
 ADDON = addon()
 icons = ADDON.getSetting('defaultIcons')
@@ -27,7 +30,7 @@ SITE_IDENTIFIER = 'cimanow'
 SITE_NAME = 'Cimanow'
 SITE_DESC = 'arabic vod'
 
-UA = 'ipad'
+#UA = 'ipad'
 
 URL_MAIN = siteManager().getUrlMain(SITE_IDENTIFIER)
 
@@ -53,8 +56,10 @@ URL_SEARCH = (URL_MAIN + '/?s=', 'showMovies')
 URL_SEARCH_MOVIES = (URL_MAIN + '/?s=%D9%81%D9%8A%D9%84%D9%85+', 'showMovies')
 URL_SEARCH_SERIES = (URL_MAIN + '/?s=%D9%85%D8%B3%D9%84%D8%B3%D9%84+', 'showSeries')
 FUNCTION_SEARCH = 'showMovies'
+ListSearch=[]
 
 s = requests.Session()
+
 
 def load():
     oGui = cGui()
@@ -115,10 +120,10 @@ def showSearch():
         #VSlog(sUrl)
         oGui.setEndOfDirectory()
         return
- 
+  
 def showSeriesSearch():
     oGui = cGui()
- 
+    ListSearch.clear()
     sSearchText = oGui.showKeyBoard()
     if sSearchText:
         sUrl = URL_MAIN + '?s=%D9%85%D8%B3%D9%84%D8%B3%D9%84+'+sSearchText
@@ -128,6 +133,7 @@ def showSeriesSearch():
 		
 def showMovies(sSearch = ''):
     IsOpenDirectory=False
+    
     oGui = cGui()
 
     # Determine the URL based on search or default value
@@ -330,7 +336,7 @@ def showSeries(sSearch = ''):
                 .replace("اون لاين", "")
             )
 
-           #      xbmcgui.Dialog().ok("Title",str(sTitle))
+                if  passflag(sTitle):
                  oOutputParameterHandler = cOutputParameterHandler()  
                  oOutputParameterHandler.addParameter('siteUrl',siteUrl)
                  oOutputParameterHandler.addParameter('sMovieTitle', sTitle)
@@ -342,12 +348,20 @@ def showSeries(sSearch = ''):
         pass#  for article in articles_Content:
         sNextPage = __checkForNextPage(sHtmlContent)
     #xbmcgui.Dialog().ok("Next page",str (sNextPage) )
+    '''''
     if sNextPage:
      oOutputParameterHandler = cOutputParameterHandler()
      oOutputParameterHandler.addParameter('siteUrl', sNextPage)
-     oGui.addDir(SITE_IDENTIFIER, 'showSeries', '[COLOR teal]Next >>>[/COLOR]', icons + '/Next.png', oOutputParameterHandler)
-     if IsOpenDirectory:
-      oGui.setEndOfDirectory()
+     oGui.addDir(SITE_IDENTIFIER, 'showSeries', '[COLOR teal]Next >>>[/COLOR]', icons + '/Next.png', oOutputParameterHandler)'''''
+    if IsOpenDirectory:
+      sNextPage = __checkForNextPage(sHtmlContent)
+      if sNextPage:
+       oOutputParameterHandler = cOutputParameterHandler()
+       oOutputParameterHandler.addParameter('siteUrl', sNextPage)
+       oGui.addDir(SITE_IDENTIFIER, 'showSeries', '[COLOR teal]Next >>>[/COLOR]', icons + '/Next.png', oOutputParameterHandler)
+       pass
+     
+       oGui.setEndOfDirectory()
        # sPattern = r'<article aria-label="post">.*?<a href="(https?://[^"]+)">.*?<li aria-label="year">\s*(\d{4})\s*</li>.*?<li aria-label="title">\s*([^<]+)\s*<em>.*?</em>\s*</li>.*?<img[^>]+src="([^"]+)"'
     '''''
         oInputParameterHandler = cInputParameterHandler()
@@ -566,7 +580,17 @@ def showSeasons():
                     oGui.addSeason(SITE_IDENTIFIER, 'showEps', sTitle, '', sThumb, sDesc, oOutputParameterHandler)
        
     oGui.setEndOfDirectory() 
- 
+    pass
+
+
+
+def passflag(duplicated):
+    if duplicated in ListSearch:
+        return False
+    else:
+        ListSearch.append(duplicated)
+        return True
+   
 def showEps():
     oGui = cGui()
   
@@ -723,85 +747,99 @@ def showServer():
     sHtmlContent = St.get(sUrl,headers=hdr)
     sHtmlContent = sHtmlContent.content.decode('utf8')  
     oParser = cParser()
-
-
+   
     oRequest = cRequestHandler(sUrl)
-    data = oRequest.request()
-  #  xbmcgui.Dialog().ok("showServer",data)
+    cook = oRequest.GetCookies()
+    hdr = {'User-Agent' : UA,'Accept-Encoding' : 'gzip','cookie' : cook,'host' : host,'referer' : URL_MAIN}
+    St=requests.Session()
+    data = St.get(sUrl,headers=hdr)
+    data = data.content.decode('utf8')  
 
-    soup=BeautifulSoup(data,"html.parser") 
-    html = soup.find_all("li", class_="active")
-    
-    # Display the result in Kodi's dialog
-   # xbmcgui.Dialog().ok("showServer", str(html))
-    
-    # Regular expression pattern to find <li> with specific data-index and data-id
-    sPattern = r'<li\b[^>]*>(.*?)</li>'
-    
-    # Convert html content to a string for regex search
-    html_str = str(html)
-    
-    # Use re.findall with the correct parameter order
-    aResult = re.findall(sPattern, html_str, re.DOTALL)
+    if 'adilbo' in data:
+        data = decode_page(data)
 
-    
-    # Display the result in Kodi's dialog
-   # xbmcgui.Dialog().ok("showServer2", str(aResult[1]))
-     # (.+?) ([^<]+) .+?
-
-    if aResult:
-         #   xbmcgui.Dialog().ok("selectElE", str("selectElE"))
-            iframe = soup.find_all("iframe")
-            iframe_str = str(iframe)
-
-         #   xbmcgui.Dialog().ok("iframe", iframe_str)
-            sPattern = r'<iframe[^>]+src="([^"]+)"'
-            ifram_src = re.findall(sPattern, iframe_str, re.DOTALL)
-            sHosterUrl =f' https:{str(ifram_src[0])}'
-         #   xbmcgui.Dialog().ok(str(sHosterUrl))
-         #   xbmcgui.Dialog().ok("src", str(   sHosterUrl ))
+    sStart = '<li aria-label="quality">'
+    sEnd = '<li aria-label="download">'
+    page0 = oParser.abParse(data, sStart, sEnd)
+     	
+    sPattern = '<a href="(.+?)".+?class="fas fa-cloud-download-alt"></i>(.+?)<p'
+    aResult = oParser.parse(page0, sPattern)
+    if aResult[0]:
+       
+        for aEntry in aResult[1]:
+            
+            url = aEntry[0]
+            sTitle = aEntry[1].replace('</i>',"")
+            sTitle = f'{sMovieTitle} ([COLOR coral]{sTitle}[/COLOR])'
+            url = url.replace("cimanow","rrsrr")
+            if url.startswith('//'):
+                url = f'http:{url}'
+            sHosterUrl = f'{url}|Referer={URL_MAIN}'
+          #  oHoster = cHosterGui().getHoster('direct_link')
             oHoster = cHosterGui().checkHoster(sHosterUrl)
-            sTitle=sMovieTitle
             if oHoster:
-             oHoster.setDisplayName(sTitle)
-             oHoster.setFileName(sMovieTitle)
-            cHosterGui().showHoster(oGui, oHoster, sHosterUrl, sThumb) 
-            pass
-            soup=BeautifulSoup(data,"html.parser") 
-            html = soup.find_all("li", attrs={"aria-label": "download"})
-
-    
-    # Display the result in Kodi's dialog
-           
-    
-    # Regular expression pattern to find <li> with specific data-index and data-id
-            sPattern = r'<a href="(https?://[^"]+)"[^>]*>\s*<i[^>]*>\s*</i>\s*Filemoon\s*</a>'
-
-    
-    # Convert html content to a string for regex search
-            html_str = str(html)
-    
-    # Use re.findall with the correct parameter order
-            aResult = re.search(sPattern, html_str, re.DOTALL)
-          
-            if aResult :
-              
-                Filemoon_link=  aResult.group(1).replace("/d/","/e/")
-                _requests=requests.get(Filemoon_link)
-                soup=BeautifulSoup(_requests.text,"html.parser") 
-                selectElE = soup.find_all("div", attrs={"class": "specific-class"})
-              
-                sHosterUrl =Filemoon_link
-                
-                oHoster = cHosterGui().checkHoster(sHosterUrl)
-                sTitle=sMovieTitle
-                if oHoster:
                  oHoster.setDisplayName(sTitle)
-                oHoster.setFileName(sMovieTitle)
-                cHosterGui().showHoster(oGui, oHoster, sHosterUrl, sThumb) 
-                pass
+                 oHoster.setFileName(sMovieTitle)
+            cHosterGui().showHoster(oGui, oHoster, sHosterUrl, sThumb)
+            
+         
+            
+           
+           
+        pass
+    sPattern = 'data-index="([^"]+)".+?data-id="([^"]+)"' 
+    aResult = oParser.parse(data, sPattern)
+    if aResult[0]:
+       
+         for aEntry in aResult[1]:
+            sIndex = aEntry[0]
+            sId = aEntry[1]
+            
+            sTitle = 'server '
+            siteUrl = f'{URL_MAIN}/wp-content/themes/Cima%20Now%20New/core.php?action=switch&index={sIndex}&id={sId}'
+            hdr = {'User-Agent' : UA,'referer' : URL_MAIN}
+            params = {'action':'switch','index':sIndex,'id':sId}                
+            St=requests.Session()
+            sHtmlContent = St.get(siteUrl,headers=hdr,params=params)
+            sHtmlContent = sHtmlContent.content
+            sPattern =  '<iframe.+?src="([^"]+)"'
+            aResult = oParser.parse(sHtmlContent, sPattern)
+            if aResult[0]:
+                for aEntry in aResult[1]:
+            
+                    url = aEntry.replace("cimanow","rrsrrs").replace("newcima","rrsrrsn")
+                    sTitle = sMovieTitle
+                    if url.startswith('//'):
+                        url = f'http:{url}'
+            
+                    sHosterUrl = url
+                    if 'userload' in sHosterUrl:
+                        sHosterUrl = f'{sHosterUrl}|Referer={URL_MAIN}'
+
+                    oHoster = cHosterGui().checkHoster(sHosterUrl)
+                    if oHoster:
+                        oHoster.setDisplayName(sMovieTitle)
+                        oHoster.setFileName(sMovieTitle)
+                        cHosterGui().showHoster(oGui, oHoster, sHosterUrl, sThumb)
+       
 
     
     oGui.setEndOfDirectory()
+def decode_page(data):
+    t_script = re.findall(r'<script.*?;.*?\'(.*?);', data, re.S)
+    t_int = re.findall(r'/g.....(.*?)\)', data, re.S)  
+    if t_script and t_int:
+        script = t_script[0].replace("'+\n'", '').replace("'", '').replace("+", '')
+        decoded_parts = []
+        for elm in script.split('.'):
+            decoded_elm = base64.b64decode(elm + '==').decode()
+            if decoded_elm:
+                number = int(re.findall(r'\d+', decoded_elm)[0])
+                decoded_char = chr(number + int(t_int[0]))
+                decoded_parts.append(decoded_char)
+        
+        return ''.join(decoded_parts)
+    
+    return None    
 
 #print("hi")
