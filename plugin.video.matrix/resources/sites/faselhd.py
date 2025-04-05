@@ -781,10 +781,15 @@ def decode_page(data):
         sc = script.split('.')
         page = ''
         for elm in sc:
-            c_elm = base64.b64decode(elm+'==').decode()
-            t_ch = re.findall('\d+', c_elm, re.S)
-            if t_ch:
-                nb = int(t_ch[0])+int(t_int[1])
-                page = page + chr(nb)
-
-    return page
+            try:
+                c_elm = base64.b64decode(elm + "==").decode('utf-8')
+                t_ch = re.findall(r"(\d+)", c_elm)
+                if t_ch:
+                    nb = int(t_ch[0]) + int(t_int[0])
+                    page += chr(nb)
+            except Exception:
+                continue
+        
+        return page
+    else:
+        return ""
