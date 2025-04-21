@@ -298,6 +298,9 @@ class cHosterGui:
         vidlo = next((x for x in ['vidlo', 'c13-look', '7c3-look'] if x in sHostName), None)
         if vidlo:    
             return self.getHoster('vidlo')
+        peytonepre = next((x for x in ['peytonepre', 'Peytonepre',"iplayerhls",] if x in sHostName), None)
+        if peytonepre:    
+            return self.getHoster('peytonepre')
 				
         # dood Clone
         dood = next((x for x in ['dooood', 'DoodStream', 'flixeo', 'd0o0d', 'dood', 'ds2play'] if x in sHostName), None)
